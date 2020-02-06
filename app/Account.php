@@ -93,23 +93,15 @@ class Account extends Base{
         $this->save();
     }
 
-    public function board($board_id = null){
-        if($board_id != null){
-            if(array_key_exists($board_id, $this->board)){
-                return $this->board[$board_id];
-            }else{
-                return false;
-            }
-        }else{
-            $ret = array_values($this->board);
-            $index = 0;
-            foreach($this->board as $board){
-                $ret[$index] = get_object_vars($ret[$index]);
-                $ret[$index]['column'] = $board->column();
-                $index ++;
-            }
-            return $ret;
+    public function board(){
+        $ret = array_values($this->board);
+        $index = 0;
+        foreach($this->board as $board){
+            $ret[$index] = get_object_vars($ret[$index]);
+            $ret[$index]['column'] = $board->column();
+            $index ++;
         }
+        return $ret;
     }
 
 
@@ -153,30 +145,14 @@ class Account extends Base{
 
     }
 
-    public static function Kanban($board_id, $column_id, $event_id){
+    public static function Kanban(){
 
         $user = self::$current;
         $user->fetchKanban();
 
-        $result = false;
-
-        if($board_id == null){
-            $result = $user->board();
-        }else{
-            $result = $user->board($board_id);
-        }
-        if($column_id != null){
-            $result = $result->column($column_id);
-        }
-        if($event_id != null){
-            $result = $result->event($event_id);
-        }
-
+        $result = $user->board();
 
         if($result !== false){
-            if(!is_array($result)){
-                $result = Array($result);
-            }
             Flight::ret(200, "OK", $result);
         }else{
             Flight::ret(404, "Not Found");

@@ -92,14 +92,14 @@ Flight::route('GET /api/user(/@id)', function ($id) {
 });
 
 
-Flight::route('GET /api/kanban(/board-@board_id:[0-9]+(/column-@column_id:[0-9]+(/event-@event_id:[0-9]+)))', function ($board_id, $column_id, $event_id) {
+Flight::route('GET /api/kanban', function () {
 
     if(Account::$current == null){
         Flight::ret(401, "Unauthorized");
         return;
     }
     
-    Account::Kanban($board_id, $column_id, $event_id);
+    Account::Kanban();
 
 });
 

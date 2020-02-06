@@ -31,24 +31,15 @@ class Board extends Base{
 
     }
 
-    public function column($column_id = null){
-        if($column_id != null){
-            if(array_key_exists($column_id, $this->column)){
-                return $this->column[$column_id];
-
-            }else{
-                return false;
-            }
-        }else{
-            $ret = array_values($this->column);
-            $index = 0;
-            foreach($this->column as $column){
-                $ret[$index] = get_object_vars($ret[$index]);
-                $ret[$index]['event'] = $column->event();
-                $index ++;
-            }
-            return $ret;
+    public function column(){
+        $ret = array_values($this->column);
+        $index = 0;
+        foreach($this->column as $column){
+            $ret[$index] = get_object_vars($ret[$index]);
+            $ret[$index]['event'] = $column->event();
+            $index ++;
         }
+        return $ret;
     }
 
 

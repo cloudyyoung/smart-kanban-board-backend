@@ -31,15 +31,7 @@ class Column extends Base{
     }
     
     public function event($event_id = null){
-        if($event_id != null){
-            if(array_key_exists($event_id, $this->event)){
-                return $this->event[$event_id];
-            }else{
-                return false;
-            }
-        }else{
-            return array_values($this->event);
-        }
+        return array_values($this->event);
     }
 
 }
