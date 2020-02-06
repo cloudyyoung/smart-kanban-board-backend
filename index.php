@@ -29,7 +29,7 @@ Flight::map('error', function (Throwable $e) {
 
 Flight::map('notFound', function () {
     // Handle not found
-    Flight::get('user')->view('404');
+    
 });
 
 
@@ -41,18 +41,26 @@ Flight::register('db', 'mysqli', array(CONFIG['database']['host'], CONFIG['datab
 Flight::map('sql', function ($sql, $fetch_all = false) {
     $db = Flight::db();
     $res = $db->query($sql);
+
     if (is_bool($res)) {
         return $res;
     }
 
-    if ($fetch_all) {
-        $ret = [];
-        while ($row = $res->fetch_assoc()) {
-            $ret[] = (object) $row;
-        }
-        return $ret;
+    $ret = [];
+    while ($row = $res->fetch_assoc()) {
+        $ret[] = (object) $row;
     }
-    return (object) $res->fetch_assoc();
+
+    if ($fetch_all) {
+        return $ret;
+    }else{
+        if(!empty($ret)){
+            return (object)$ret[0];
+        }else{
+            return [];
+        }
+    }
+    
 });
 
 // RESTful
@@ -63,6 +71,36 @@ Flight::map('ret', function ($code = 204, $message = '', $array = null) {
         Flight::json($array);
     }
     Flight::stop();
+});
+
+
+
+
+use App\Account;
+
+if (isset($_SESSION['user'])) {
+    Account::$current = unserialize($_SESSION['user']);
+}
+
+
+Flight::route('POST /api/user/signin', function () {
+    Account::Signin();
+});
+
+Flight::route('GET /api/user(/@id)', function ($id) {
+    Account::User($id);
+});
+
+
+Flight::route('GET /api/kanban(/board-@board_id:[0-9]+(/column-@column_id:[0-9]+(/event-@event_id:[0-9]+)))', function ($board_id, $column_id, $event_id) {
+
+    if(Account::$current == null){
+        Flight::ret(401, "Unauthorized");
+        return;
+    }
+    
+    Account::Kanban($board_id, $column_id, $event_id);
+
 });
 
 
