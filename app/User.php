@@ -75,7 +75,7 @@ class User extends Base{
         $_SESSION['user'] = serialize($this); // store user in current session
     }
 
-    public static function Signin(){
+    public static function Authentication(){
 
         $user = new User();
 
@@ -83,10 +83,10 @@ class User extends Base{
         $password = Flight::request()->data['password'];
 
         if(!$user->authenticate($username, $password)){
-            Flight::ret(403, "Incorrect User");
+            Flight::ret(403, "Failed Authentication");
         }else{
             $user->save();
-            Flight::ret(200, "OK");
+            Flight::ret(200, "OK", $user);
         }
 
     }

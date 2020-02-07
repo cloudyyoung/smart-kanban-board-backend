@@ -84,8 +84,8 @@ if (isset($_SESSION['user'])) {
 }
 
 
-Flight::route('POST /api/user/signin', function () {
-    User::Signin();
+Flight::route('POST /api/user/authentication', function () {
+    User::Authentication();
 });
 
 Flight::route('GET /api/user(/@id)', function ($id) {
@@ -96,7 +96,7 @@ Flight::route('GET /api/user(/@id)', function ($id) {
 Flight::route('GET /api/kanban', function () {
 
     if(User::$current == null){
-        Flight::ret(403, "No Authority");
+        Flight::ret(403, "Unauthorized");
         return;
     }
 
