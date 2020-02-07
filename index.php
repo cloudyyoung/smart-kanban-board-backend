@@ -77,6 +77,7 @@ Flight::map('ret', function ($code = 204, $message = '', $array = null) {
 
 
 use App\Account;
+use App\Kanban;
 
 if (isset($_SESSION['user'])) {
     Account::$current = unserialize($_SESSION['user']);
@@ -93,14 +94,7 @@ Flight::route('GET /api/user(/@id)', function ($id) {
 
 
 Flight::route('GET /api/kanban', function () {
-
-    if(Account::$current == null){
-        Flight::ret(401, "Unauthorized");
-        return;
-    }
-    
-    Account::Kanban();
-
+    Kanban::Kanban(Account::$current);
 });
 
 

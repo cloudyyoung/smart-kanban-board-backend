@@ -41,5 +41,12 @@ class Board{
         return $arr;
     }
 
+    public function getColumn($column_id){
+        if(array_key_exists($column_id, $this->column)){
+            return $this->column[$column_id];
+        }else{
+            return false;
+        }
+    }
 
 }

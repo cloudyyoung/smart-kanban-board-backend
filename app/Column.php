@@ -39,4 +39,12 @@ class Column{
         return $arr;
     }
 
+    public function getEvent($event_id){
+        if(array_key_exists($event_id, $this->event)){
+            return $this->column[$event_id];
+        }else{
+            return false;
+        }
+    }
+
 }

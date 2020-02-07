@@ -17,8 +17,6 @@ class Account extends Base{
     public $sessid = ""; // PHPSESSID
     public $authenticated = false;
     public $existing = false;
-
-    private $board = Array();
     private $password = "";
 
 
@@ -47,10 +45,6 @@ class Account extends Base{
 
     }
 
-    function __toarray(){
-        return Array();
-    }
-
 
     private function authenticate($username, $password){
 
@@ -72,8 +66,6 @@ class Account extends Base{
             $this->$key = $value;
         }
 
-        $this->fetchKanban();
-
         $this->authenticated = true;
         return true;
     }
@@ -82,17 +74,6 @@ class Account extends Base{
         self::$current = $this;
         $_SESSION['user'] = serialize($this); // store user in current session
     }
-
-    public function fetchKanban(){
-        $this->board = Array();
-        $id = $this->id;
-        $ret = Flight::sql("SELECT * FROM `board` WHERE `account_id`='$id'  ", true);
-        foreach($ret as $board){
-            $this->board[(string)$board->id] = new Board($board->id, $board->title, $board->note);
-        }
-        $this->save();
-    }
-
 
     public static function Signin(){
 
@@ -131,25 +112,6 @@ class Account extends Base{
         }else{
             Flight::ret(403, "Incorrect Account");
         }
-
-    }
-
-    public static function Kanban(){
-
-        $user = self::$current;
-        $user->fetchKanban();
-
-        $result = [];
-        foreach($user->board as $board){
-            $result[] = $board->get();
-        }
-
-        if($result !== false){
-            Flight::ret(200, "OK", $result);
-        }else{
-            Flight::ret(404, "Not Found");
-        }
-        
 
     }
 
