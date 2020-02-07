@@ -94,7 +94,14 @@ Flight::route('GET /api/user(/@id)', function ($id) {
 
 
 Flight::route('GET /api/kanban', function () {
-    Kanban::Kanban(User::$current);
+
+    if(User::$current == null){
+        Flight::ret(403, "No Authority");
+        return;
+    }
+
+    Kanban::$current = User::$current;
+    Kanban::Kanban();
 });
 
 

@@ -1,7 +1,6 @@
 <?php
 
 
-
 namespace App;
 
 use Flight;
@@ -23,14 +22,9 @@ class Kanban{
         return true;
     }
 
-    public static function Kanban($user){ // give user
+    public static function Kanban(){ // give user
 
-        if($user == null){
-            Flight::ret(404, "Not Found");
-            return;
-        }
-
-        self::fetch($user->id);
+        self::fetch(self::$current->id);
 
         $boards = [];
         foreach(self::$board as $board){
