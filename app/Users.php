@@ -6,9 +6,9 @@ namespace App;
 use Flight;
 use Throwable;
 
-use \App\Board;
+use \App\Boards;
 
-class User{
+class Users{
 
     public static $current = null; // current id
 
@@ -77,7 +77,7 @@ class User{
 
     public static function Authentication(){
 
-        $user = new User();
+        $user = new Users();
 
         $username = Flight::request()->data['username'];
         $password = Flight::request()->data['password'];
@@ -91,18 +91,18 @@ class User{
 
     }
 
-    public static function User($id = null){
+    public static function Userss($id = null){
 
         $user = null;
         $tryCurrent = false;
 
         if($id != null){ // specific user
-            $user = new User($id);
+            $user = new Users($id);
         }else if(self::$current != null){ // currently has authenticated in user
             $user = self::$current;
         }else{
             $tryCurrent = true; // try visit /api/user/ (default user)
-            $user = new User();
+            $user = new Users();
         }
         
         if($user->existing){ // existing user query

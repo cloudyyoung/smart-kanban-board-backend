@@ -76,26 +76,26 @@ Flight::map('ret', function ($code = 204, $message = '', $array = null) {
 
 
 
-use App\User;
+use App\Users;
 use App\Kanban;
 
 if (isset($_SESSION['user'])) {
-    User::$current = unserialize($_SESSION['user']);
-    Kanban::$current = User::$current;
+    Users::$current = unserialize($_SESSION['user']);
+    Kanban::$current = Users::$current;
 }
 
 
-Flight::route('PUT /api/user/authentication', function () {
-    User::Authentication();
+Flight::route('PUT /api/users/authentication', function () {
+    Users::Authentication();
 });
 
-Flight::route('GET /api/user(/@id)', function ($id) {
-    User::User($id);
+Flight::route('GET /api/users(/@id)', function ($id) {
+    if($id == "me") $id = null;
+    Users::Userss($id);
 });
 
 
 Flight::route('GET /api/kanban', function () {
-
     if(Kanban::$current == null){
         Flight::ret(403, "Unauthorized");
         return;
@@ -104,7 +104,12 @@ Flight::route('GET /api/kanban', function () {
     Kanban::Kanban();
 });
 
-Flight::route('GET /api/boards(/@board_id)', function($board_id){
+Flight::route('GET /api/boards(/@board_id[0-9]+)', function($board_id){
+    if(Kanban::$current == null){
+        Flight::ret(403, "Unauthorized");
+        return;
+    }
+
     $method = Flight::request()->method;
     Kanban::Boards($method, $board_id);
 });

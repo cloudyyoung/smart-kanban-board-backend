@@ -6,16 +6,16 @@ namespace App;
 use Flight;
 use Throwable;
 
-use \App\Column;
+use \App\Columns;
 
-class Board{
+class Boards{
 
     public static $uid = 0;
 
     public $id = 0;
     public $title = "";
     public $note = "";
-    private $column = Array();
+    private $columns = Array();
 
     function __construct($id, $title, $note){
 
@@ -26,7 +26,7 @@ class Board{
         $ret = Flight::sql("SELECT * FROM `column` WHERE `board_id` ='$id'   ", true);
         foreach($ret as $column){
             // var_dump($column->title);
-            $this->column[(string)$column->id] = new Column($column->id, $column->title, $column->note);
+            $this->columns[(string)$column->id] = new Columns($column->id, $column->title, $column->note);
         }
 
     }
@@ -35,15 +35,15 @@ class Board{
     public function get(){
         $arr = get_object_vars($this);
         $arr['column'] = [];
-        foreach($this->column as $column){
+        foreach($this->columns as $column){
             $arr['column'][] = $column->get();
         }
         return $arr;
     }
 
-    public function getColumn($column_id){
-        if(array_key_exists($column_id, $this->column)){
-            return $this->column[$column_id];
+    public function getColumns($column_id){
+        if(array_key_exists($column_id, $this->columns)){
+            return $this->columns[$column_id];
         }else{
             return false;
         }

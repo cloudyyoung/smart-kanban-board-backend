@@ -7,7 +7,7 @@ use Flight;
 use Throwable;
 
 
-class Event{
+class Events{
 
     public static $uid = 0;
 
