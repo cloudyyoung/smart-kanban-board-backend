@@ -63,18 +63,28 @@ Flight::map('sql', function ($sql, $fetch_all = false) {
     
 });
 
+use App\StatusCodes;
+
 // RESTful
-Flight::map('ret', function ($code = 204, $message = '', $array = null) {
-    $message = ucwords($message);
-    header("HTTP/1.1 $code $message");
+Flight::map('ret', function ($code = StatusCodes::NO_CONTENT, $message = '', $array = null) {
+    header(StatusCodes::httpHeaderFor($code));
     http_response_code($code);
-    if (!empty($array)) {
+
+    if($code > StatusCodes::errorCodesBeginAt){
+        $message = ucwords($message);
+        Flight::json(Array(
+            "error" => Array(
+                "code" => $code,
+                "message" => $message,
+                "details" => $array
+            )
+        ));
+    }else if (!empty($array)) {
         Flight::json($array);
     }
+
     Flight::stop();
 });
-
-
 
 
 use App\Users;

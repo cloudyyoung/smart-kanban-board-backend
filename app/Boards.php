@@ -8,6 +8,7 @@ use Throwable;
 
 use App\Columns;
 use App\Kanban;
+use App\StatusCodes;
 
 class Boards{
 
@@ -85,11 +86,22 @@ class Boards{
     }
 
     private static function deletes($user_id, $board_id){
-        $ret = Flight::sql("DELETE FROM `board` WHERE `id`=$board_id AND `user_id`=$user_id   ");
+        $ret = Flight::sql("SELECT * FROM `board` WHERE `user_id`='$user_id' AND `id`='$board_id'  ");
+        if(empty($ret)){
+            return [StatusCodes::FORBIDDEN, "Could not find board", null];
+        }
+        
+        $ret = Flight::sql(<<<SQL
+            BEGIN;
+            DELETE FROM `board` WHERE `id`=$board_id AND `user_id`=$user_id;
+            DELETE FROM `column` WHERE `board_id`=$board_id;
+            DELETE FROM `event` WHERE `board_id`=$board_id;
+            COMMIT;
+        SQL);
         if($ret === false){
-            return false;
+            return list(StatusCodes::SERVICE_ERROR, "Fail to delete by database error", null);
         }else{
-            return true;
+            return list(StatusCodes::OK, null, null);
         }
     }
 
@@ -98,57 +110,48 @@ class Boards{
     public static function Boards($method, $board_id){
         $user_id = Kanban::$current->id;
         $data = Flight::request()->data;
+
+        $funct = "";
+        $args = Array();
         
         switch($method){
             case "GET":
-                $ret = self::gets($user_id, $board_id);
-                if($ret === false){
-                    Flight::ret(404, "Not Found");
-                }else{
-                    Flight::ret(200, "OK", $ret);
-                }
+                $func = "gets";
             break;
             case "POST":
-                if(!isset($data->title)){
-                    Flight::ret(406, "Lack of Param");
-                    return;
-                }
-                $title = addslashes($data->title);
-                $note = addslashes($data->note);
-                $ret = self::creates($user_id, $title, $note);
-                if($ret === false){
-                    Flight::ret(540, "Server Error");
-                }else{
-                    Flight::ret(200, "OK", $ret);
-                }
+                $func = "creates";
+                $args = ["title"];
             break;
             case "PATCH":
-                if(empty($data) || !isset($board_id)){
-                    Flight::ret(406, "Lack of Param");
-                    return;
-                }
-                $title = addslashes($data->title);
-                $note = addslashes($data->note);
-                $ret = self::updates($user_id, $board_id, $title, $note);
-                if($ret === false){
-                    Flight::ret(540, "Server Error");
-                }else{
-                    Flight::ret(200, "OK", $ret);
-                }
+                $func = "updates";
+                $args = ["board_id"];
             break;
             case "DELETE":
-                if(!isset($board_id)){
-                    Flight::ret(406, "Lack of Param");
-                    return;
-                }
-                $ret = self::deletes($user_id, $board_id);
-                if($ret === false){
-                    Flight::ret(540, "Server Error");
-                }else{
-                    Flight::ret(200, "OK");
-                }
+                $func = "deletes";
+                $args = ["board_id"];
             break;
         }
+
+        $miss = [];
+        $data->board_id = $board_id;
+        foreach($args as $key => $param){
+            if(!isset($data->$param)){
+                array_push($miss, $param);
+            }
+        }
+
+        if(!empty($miss)){
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Missing Params", Array("missing" => $miss));
+            return;
+        }
+
+        list($code, $message, $array) = self::$func($user_id, $board_id);
+        if($code > StatusCodes::errorCodesBeginAt){
+            Flight::ret($code, $message, $array);
+        }else{
+            Flight::ret($code);
+        }
+
     }
 
 }
