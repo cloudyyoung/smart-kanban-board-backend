@@ -6,7 +6,8 @@ namespace App;
 use Flight;
 use Throwable;
 
-use \App\Columns;
+use App\Columns;
+use App\Kanban;
 
 class Boards{
 
@@ -47,11 +48,58 @@ class Boards{
         }
     }
 
-    public static function GetBoards($user_id, $board_id = null){
+    private static function gets($user_id, $board_id = null){
         if($board_id == null){
             return Flight::sql("SELECT * FROM `board` WHERE `user_id`='$user_id'  ", true);
         }else{
             return Flight::sql("SELECT * FROM `board` WHERE `user_id`='$user_id' AND `id`='$board_id'  ", true);
+        }
+    }
+
+    private static function creates($user_id, $title, $note){
+        $ret = Flight::sql("INSERT INTO `board`(`user_id`, `title`, `note`) VALUES ($user_id, '$title', '$note')  ");
+        if($ret === false){
+            return false;
+        }else{
+            $ret = Flight::sql("SELECT * FROM `board` WHERE `id`=LAST_INSERT_ID();  ");
+            return $ret;
+        }
+        
+    }
+
+    
+
+    public static function Boards($method, $board_id){
+        $user = Kanban::$current;
+        $data = Flight::request()->data;
+        foreach($data as $key => $each){
+            if($each == null){
+                $data[$key] = "";
+            }
+        }
+        
+        switch($method){
+            case "GET":
+                $ret = self::gets($user->id, $board_id);
+                if($ret === false){
+                    Flight::ret(404, "Not Found");
+                }else{
+                    Flight::ret(200, "OK", $ret);
+                }
+            break;
+            case "POST":
+                if(!isset($data->title) || !isset($data->note)){
+                    return;
+                }
+                $title = addslashes($data->title);
+                $note = addslashes($data->note);
+                $ret = self::creates($user->id, $title, $note);
+                if($ret === false){
+                    Flight::ret(540, "Error Occured");
+                }else{
+                    Flight::ret(200, "OK", $ret);
+                }
+            break;
         }
     }
 

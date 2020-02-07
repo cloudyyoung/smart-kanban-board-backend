@@ -6,7 +6,7 @@ namespace App;
 use Flight;
 use Throwable;
 
-use \App\Events;
+use App\Events;
 
 class Columns{
 

@@ -6,7 +6,6 @@ namespace App;
 use Flight;
 use Throwable;
 
-use \App\Boards;
 
 class Users{
 

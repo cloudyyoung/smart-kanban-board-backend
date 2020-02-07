@@ -34,20 +34,4 @@ class Kanban{
         Flight::ret(200, "OK", $result);
     }
 
-
-    public static function Boards($method, $board_id){
-        switch($method){
-            case "GET":
-                $ret = Boards::getBoards(self::$current->id, $board_id);
-                if($ret === false){
-                    Flight::ret(404, "Not Found");
-                }else{
-                    Flight::ret(200, "OK", $ret);
-                }
-            break;
-            case "POST":
-                
-            break;
-        }
-    }
 }
