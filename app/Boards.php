@@ -96,12 +96,12 @@ class Boards{
     
 
     public static function Boards($method, $board_id){
-        $user = Kanban::$current;
+        $user_id = Kanban::$current->id;
         $data = Flight::request()->data;
         
         switch($method){
             case "GET":
-                $ret = self::gets($user->id, $board_id);
+                $ret = self::gets($user_id, $board_id);
                 if($ret === false){
                     Flight::ret(404, "Not Found");
                 }else{
@@ -115,7 +115,7 @@ class Boards{
                 }
                 $title = addslashes($data->title);
                 $note = addslashes($data->note);
-                $ret = self::creates($user->id, $title, $note);
+                $ret = self::creates($user_id, $title, $note);
                 if($ret === false){
                     Flight::ret(540, "Error");
                 }else{
@@ -129,7 +129,7 @@ class Boards{
                 }
                 $title = addslashes($data->title);
                 $note = addslashes($data->note);
-                $ret = self::updates($user->id, $board_id, $title, $note);
+                $ret = self::updates($user_id, $board_id, $title, $note);
                 if($ret === false){
                     Flight::ret(540, "Error");
                 }else{
@@ -141,7 +141,7 @@ class Boards{
                     Flight::ret(406, "Lack of Param");
                     return;
                 }
-                $ret = self::deletes($user->id, $board_id);
+                $ret = self::deletes($user_id, $board_id);
                 if($ret === false){
                     Flight::ret(540, "Error");
                 }else{
