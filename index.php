@@ -104,7 +104,7 @@ Flight::route('GET /api/kanban', function () {
     Kanban::Kanban();
 });
 
-Flight::route('GET /api/boards(/@board_id[0-9]+)', function($board_id){
+Flight::route('GET /api/boards(/@board_id:[0-9]+)', function($board_id){
     if(Kanban::$current == null){
         Flight::ret(403, "Unauthorized");
         return;
@@ -117,8 +117,8 @@ Flight::route('GET /api/boards(/@board_id[0-9]+)', function($board_id){
 
 
 
-Flight::route('/', function () {
-    echo 'Kanban whah???';
+Flight::route('*', function () {
+    Flight::ret(501, "Not Implemented");
 });
 
 

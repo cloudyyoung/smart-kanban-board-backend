@@ -5,8 +5,8 @@ namespace App;
 
 use Flight;
 use Throwable;
+use App;
 
-use App\Boards;
 
 class Kanban{
 
@@ -20,16 +20,6 @@ class Kanban{
             self::$boards[(string)$board->id] = new Boards($board->id, $board->title, $board->note);
         }
         return true;
-    }
-
-    private static function getBoards($board_id = null){
-        if($board_id == null){
-            return array_values(self::$boards);
-        }else if(array_key_exists($board_id, self::$boards) && $board_id != null){
-            return self::$boards[$board_id];
-        }else{
-            return false;
-        }
     }
 
     public static function Kanban(){
@@ -46,16 +36,17 @@ class Kanban{
 
 
     public static function Boards($method, $board_id){
-        self::fetch(self::$current->id);
-
         switch($method){
             case "GET":
-                $ret = self::getBoards($board_id);
+                $ret = Boards::getBoards(self::$current->id, $board_id);
                 if($ret === false){
                     Flight::ret(404, "Not Found");
                 }else{
                     Flight::ret(200, "OK", $ret);
                 }
+            break;
+            case "POST":
+                
             break;
         }
     }

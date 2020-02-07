@@ -25,12 +25,10 @@ class Boards{
 
         $ret = Flight::sql("SELECT * FROM `column` WHERE `board_id` ='$id'   ", true);
         foreach($ret as $column){
-            // var_dump($column->title);
             $this->columns[(string)$column->id] = new Columns($column->id, $column->title, $column->note);
         }
 
     }
-
 
     public function get(){
         $arr = get_object_vars($this);
@@ -46,6 +44,14 @@ class Boards{
             return $this->columns[$column_id];
         }else{
             return false;
+        }
+    }
+
+    public static function GetBoards($user_id, $board_id = null){
+        if($board_id == null){
+            return Flight::sql("SELECT * FROM `board` WHERE `user_id`='$user_id'  ", true);
+        }else{
+            return Flight::sql("SELECT * FROM `board` WHERE `user_id`='$user_id' AND `id`='$board_id'  ", true);
         }
     }
 
