@@ -22,8 +22,6 @@ class User extends Base{
 
     function __construct($id = null){
 
-        $this->sessid = session_id();
-
         $ret = [];
         if(is_numeric($id)){ // giving id or not
             $ret = Flight::sql("SELECT `username`, `id` FROM `user` WHERE `id` = '$id'  ");
@@ -41,6 +39,7 @@ class User extends Base{
 
         if(self::$current != null && (self::$current->id == $this->id || self::$current->username == $this->username)){
             $this->authenticated = true;
+            $this->sessid = session_id();
         }
 
     }
@@ -67,6 +66,7 @@ class User extends Base{
         }
 
         $this->authenticated = true;
+        $this->sessid = session_id();
         return true;
     }
 
@@ -110,7 +110,7 @@ class User extends Base{
         }else if($tryCurrent){
             Flight::ret(401, "Unauthorized");
         }else{
-            Flight::ret(403, "Incorrect User");
+            Flight::ret(404, "Not Found");
         }
 
     }

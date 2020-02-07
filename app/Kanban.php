@@ -32,10 +32,12 @@ class Kanban{
 
         self::fetch($user->id);
 
-        $result = [];
+        $boards = [];
         foreach(self::$board as $board){
-            $result[] = $board->get();
+            $boards[] = $board->get();
         }
+
+        $result = Array("board" => $boards);
 
         Flight::ret(200, "OK", $result);
 
