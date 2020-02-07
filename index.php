@@ -106,7 +106,7 @@ Flight::route('GET /api/kanban', function () {
     Kanban::Kanban();
 });
 
-Flight::route('GET|POST|PATCH /api/boards(/@board_id:[0-9]+)', function($board_id){
+Flight::route('GET|POST|PATCH|DELETE /api/boards(/@board_id:[0-9]+)', function($board_id){
     if(Kanban::$current == null){
         Flight::ret(403, "Unauthorized");
         return;

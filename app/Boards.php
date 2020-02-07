@@ -66,7 +66,7 @@ class Boards{
         }
     }
 
-    private static function updates($board_id, $title, $note){
+    private static function updates($user_id, $board_id, $title, $note){
         $vars = [];
         if($title != null){
             $vars[] =  "`title`='$title'";
@@ -75,12 +75,21 @@ class Boards{
             $vars[] =  "`note`='$note'";
         }
         
-        $ret = Flight::sql("UPDATE `board` SET " . implode(", ", $vars) . " WHERE `id`=$board_id  ");
+        $ret = Flight::sql("UPDATE `board` SET " . implode(", ", $vars) . " WHERE `id`=$board_id AND `user_id`=$user_id   ");
         if($ret === false){
             return false;
         }else{
             $ret = Flight::sql("SELECT * FROM `board` WHERE `id`=$board_id  ");
             return $ret;
+        }
+    }
+
+    private static function deletes($user_id, $board_id){
+        $ret = Flight::sql("DELETE FROM `board` WHERE `id`=$board_id AND `user_id`=$user_id   ");
+        if($ret === false){
+            return false;
+        }else{
+            return true;
         }
     }
 
@@ -114,18 +123,29 @@ class Boards{
                 }
             break;
             case "PATCH":
-                if(empty($data) || !isset($data->board_id) || (isset($data->board_id) && count($data) == 1)){
+                if(empty($data) || !isset($board_id)){
                     Flight::ret(406, "Lack of Param");
                     return;
                 }
-                $board_id = (int)$data->board_id;
                 $title = addslashes($data->title);
                 $note = addslashes($data->note);
-                $ret = self::updates($board_id, $title, $note);
+                $ret = self::updates($user->id, $board_id, $title, $note);
                 if($ret === false){
                     Flight::ret(540, "Error");
                 }else{
                     Flight::ret(200, "OK", $ret);
+                }
+            break;
+            case "DELETE":
+                if(!isset($board_id)){
+                    Flight::ret(406, "Lack of Param");
+                    return;
+                }
+                $ret = self::deletes($user->id, $board_id);
+                if($ret === false){
+                    Flight::ret(540, "Error");
+                }else{
+                    Flight::ret(200, "OK");
                 }
             break;
         }
