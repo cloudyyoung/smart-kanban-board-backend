@@ -76,25 +76,25 @@ Flight::map('ret', function ($code = 204, $message = '', $array = null) {
 
 
 
-use App\Account;
+use App\User;
 use App\Kanban;
 
 if (isset($_SESSION['user'])) {
-    Account::$current = unserialize($_SESSION['user']);
+    User::$current = unserialize($_SESSION['user']);
 }
 
 
 Flight::route('POST /api/user/signin', function () {
-    Account::Signin();
+    User::Signin();
 });
 
 Flight::route('GET /api/user(/@id)', function ($id) {
-    Account::User($id);
+    User::User($id);
 });
 
 
 Flight::route('GET /api/kanban', function () {
-    Kanban::Kanban(Account::$current);
+    Kanban::Kanban(User::$current);
 });
 
 

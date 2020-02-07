@@ -16,7 +16,7 @@ class Kanban{
 
     private static function fetch($id){ // give user id
         self::$board = Array();
-        $ret = Flight::sql("SELECT * FROM `board` WHERE `account_id`='$id'  ", true);
+        $ret = Flight::sql("SELECT * FROM `board` WHERE `user_id`='$id'  ", true);
         foreach($ret as $board){
             self::$board[(string)$board->id] = new Board($board->id, $board->title, $board->note);
         }

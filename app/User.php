@@ -8,7 +8,7 @@ use Throwable;
 
 use \App\Board;
 
-class Account extends Base{
+class User extends Base{
 
     public static $current = null; // current id
 
@@ -26,9 +26,9 @@ class Account extends Base{
 
         $ret = [];
         if(is_numeric($id)){ // giving id or not
-            $ret = Flight::sql("SELECT `username`, `id` FROM `account` WHERE `id` = '$id'  ");
+            $ret = Flight::sql("SELECT `username`, `id` FROM `user` WHERE `id` = '$id'  ");
         }else if($id != null){ // giving username
-            $ret = Flight::sql("SELECT `username`, `id` FROM `account` WHERE `username` = '$id'  ");
+            $ret = Flight::sql("SELECT `username`, `id` FROM `user` WHERE `username` = '$id'  ");
         }else{
             return;
         }
@@ -55,7 +55,7 @@ class Account extends Base{
         $this->username = $username;
         $this->password = $password;
 
-        $ret = Flight::sql("SELECT * FROM `account` WHERE `username`='$username' AND `password`='$password'  ");
+        $ret = Flight::sql("SELECT * FROM `user` WHERE `username`='$username' AND `password`='$password'  ");
 
         if (empty($ret)) {
             return false;
@@ -77,13 +77,13 @@ class Account extends Base{
 
     public static function Signin(){
 
-        $user = new Account();
+        $user = new User();
 
         $username = Flight::request()->data['username'];
         $password = Flight::request()->data['password'];
 
         if(!$user->authenticate($username, $password)){
-            Flight::ret(403, "Incorrect Account");
+            Flight::ret(403, "Incorrect User");
         }else{
             $user->save();
             Flight::ret(200, "OK");
@@ -97,20 +97,20 @@ class Account extends Base{
         $tryCurrent = false;
 
         if($id != null){ // specific user
-            $user = new Account($id);
+            $user = new User($id);
         }else if(self::$current != null){ // currently has authenticated in user
             $user = self::$current;
         }else{
             $tryCurrent = true; // try visit /api/user/ (default user)
-            $user = new Account();
+            $user = new User();
         }
         
-        if($user->existing){ // existing account query
+        if($user->existing){ // existing user query
             Flight::ret(200, "OK", $user);
         }else if($tryCurrent){
             Flight::ret(401, "Unauthorized");
         }else{
-            Flight::ret(403, "Incorrect Account");
+            Flight::ret(403, "Incorrect User");
         }
 
     }
