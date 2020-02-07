@@ -117,7 +117,7 @@ class Boards{
                 $note = addslashes($data->note);
                 $ret = self::creates($user_id, $title, $note);
                 if($ret === false){
-                    Flight::ret(540, "Error");
+                    Flight::ret(540, "Server Error");
                 }else{
                     Flight::ret(200, "OK", $ret);
                 }
@@ -131,7 +131,7 @@ class Boards{
                 $note = addslashes($data->note);
                 $ret = self::updates($user_id, $board_id, $title, $note);
                 if($ret === false){
-                    Flight::ret(540, "Error");
+                    Flight::ret(540, "Server Error");
                 }else{
                     Flight::ret(200, "OK", $ret);
                 }
@@ -143,7 +143,7 @@ class Boards{
                 }
                 $ret = self::deletes($user_id, $board_id);
                 if($ret === false){
-                    Flight::ret(540, "Error");
+                    Flight::ret(540, "Server Error");
                 }else{
                     Flight::ret(200, "OK");
                 }
