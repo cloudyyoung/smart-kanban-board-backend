@@ -93,17 +93,6 @@ class Account extends Base{
         $this->save();
     }
 
-    public function board(){
-        $ret = array_values($this->board);
-        $index = 0;
-        foreach($this->board as $board){
-            $ret[$index] = get_object_vars($ret[$index]);
-            $ret[$index]['column'] = $board->column();
-            $index ++;
-        }
-        return $ret;
-    }
-
 
     public static function Signin(){
 
@@ -150,7 +139,10 @@ class Account extends Base{
         $user = self::$current;
         $user->fetchKanban();
 
-        $result = $user->board();
+        $result = [];
+        foreach($user->board as $board){
+            $result[] = $board->get();
+        }
 
         if($result !== false){
             Flight::ret(200, "OK", $result);

@@ -7,7 +7,7 @@ use Flight;
 use Throwable;
 
 
-class Event extends Base{
+class Event{
 
     public static $uid = 0;
 
@@ -21,6 +21,10 @@ class Event extends Base{
         $this->title = $title;
         $this->note = $note;
 
+    }
+
+    public function get(){
+        return get_object_vars($this);
     }
 
 

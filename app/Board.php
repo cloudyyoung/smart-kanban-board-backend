@@ -8,7 +8,7 @@ use Throwable;
 
 use \App\Column;
 
-class Board extends Base{
+class Board{
 
     public static $uid = 0;
 
@@ -31,15 +31,14 @@ class Board extends Base{
 
     }
 
-    public function column(){
-        $ret = array_values($this->column);
-        $index = 0;
+
+    public function get(){
+        $arr = get_object_vars($this);
+        $arr['column'] = [];
         foreach($this->column as $column){
-            $ret[$index] = get_object_vars($ret[$index]);
-            $ret[$index]['event'] = $column->event();
-            $index ++;
+            $arr['column'][] = $column->get();
         }
-        return $ret;
+        return $arr;
     }
 
 

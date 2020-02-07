@@ -8,7 +8,7 @@ use Throwable;
 
 use \App\Event;
 
-class Column extends Base{
+class Column{
 
     public static $uid = 0;
 
@@ -30,8 +30,13 @@ class Column extends Base{
 
     }
     
-    public function event($event_id = null){
-        return array_values($this->event);
+    public function get(){
+        $arr = get_object_vars($this);
+        $arr['event'] = [];
+        foreach($this->event as $event){
+            $arr['event'][] = $event->get();
+        }
+        return $arr;
     }
 
 }
