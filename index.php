@@ -67,6 +67,7 @@ Flight::map('sql', function ($sql, $fetch_all = false) {
 Flight::map('ret', function ($code = 204, $message = '', $array = null) {
     $message = ucwords($message);
     header("HTTP/1.1 $code $message");
+    http_response_code($code);
     if (!empty($array)) {
         Flight::json($array);
     }
@@ -105,7 +106,7 @@ Flight::route('GET /api/kanban', function () {
     Kanban::Kanban();
 });
 
-Flight::route('GET|POST /api/boards(/@board_id:[0-9]+)', function($board_id){
+Flight::route('GET|POST|PATCH /api/boards(/@board_id:[0-9]+)', function($board_id){
     if(Kanban::$current == null){
         Flight::ret(403, "Unauthorized");
         return;

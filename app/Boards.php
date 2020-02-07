@@ -64,7 +64,24 @@ class Boards{
             $ret = Flight::sql("SELECT * FROM `board` WHERE `id`=LAST_INSERT_ID();  ");
             return $ret;
         }
+    }
+
+    private static function updates($board_id, $title, $note){
+        $vars = [];
+        if($title != null){
+            $vars[] =  "`title`='$title'";
+        }
+        if($note != null){
+            $vars[] =  "`note`='$note'";
+        }
         
+        $ret = Flight::sql("UPDATE `board` SET " . implode(", ", $vars) . " WHERE `id`=$board_id  ");
+        if($ret === false){
+            return false;
+        }else{
+            $ret = Flight::sql("SELECT * FROM `board` WHERE `id`=$board_id  ");
+            return $ret;
+        }
     }
 
     
@@ -91,13 +108,25 @@ class Boards{
                 $note = addslashes($data->note);
                 $ret = self::creates($user->id, $title, $note);
                 if($ret === false){
-                    Flight::ret(540, "Error Occured");
+                    Flight::ret(540, "Error");
                 }else{
                     Flight::ret(200, "OK", $ret);
                 }
             break;
             case "PATCH":
-                
+                if(empty($data) || !isset($data->board_id) || (isset($data->board_id) && count($data) == 1)){
+                    Flight::ret(406, "Lack of Param");
+                    return;
+                }
+                $board_id = (int)$data->board_id;
+                $title = addslashes($data->title);
+                $note = addslashes($data->note);
+                $ret = self::updates($board_id, $title, $note);
+                if($ret === false){
+                    Flight::ret(540, "Error");
+                }else{
+                    Flight::ret(200, "OK", $ret);
+                }
             break;
         }
     }
