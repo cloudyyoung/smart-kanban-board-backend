@@ -72,11 +72,6 @@ class Boards{
     public static function Boards($method, $board_id){
         $user = Kanban::$current;
         $data = Flight::request()->data;
-        foreach($data as $key => $each){
-            if($each == null){
-                $data[$key] = "";
-            }
-        }
         
         switch($method){
             case "GET":
@@ -88,7 +83,8 @@ class Boards{
                 }
             break;
             case "POST":
-                if(!isset($data->title) || !isset($data->note)){
+                if(!isset($data->title)){
+                    Flight::ret(406, "Lack of Param");
                     return;
                 }
                 $title = addslashes($data->title);
@@ -99,6 +95,9 @@ class Boards{
                 }else{
                     Flight::ret(200, "OK", $ret);
                 }
+            break;
+            case "PATCH":
+                
             break;
         }
     }
