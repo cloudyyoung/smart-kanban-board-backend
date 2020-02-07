@@ -8,7 +8,7 @@ use Throwable;
 
 use \App\Board;
 
-class User extends Base{
+class User{
 
     public static $current = null; // current id
 

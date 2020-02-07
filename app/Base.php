@@ -32,7 +32,7 @@ class Base
                 $funcName = 'read';
             }
             if (substr($funcName, 0, 1) == "_" || substr($funcName, 0, 3) == "get" || substr($funcName, 0, 3) == "set" || substr($funcName, 0, 3) == "run") {
-                throw new Error('denied');
+                throw new Throwable('denied');
             }
 
             if ($funcName2 != null) {

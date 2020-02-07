@@ -81,10 +81,11 @@ use App\Kanban;
 
 if (isset($_SESSION['user'])) {
     User::$current = unserialize($_SESSION['user']);
+    Kanban::$current = User::$current;
 }
 
 
-Flight::route('POST /api/user/authentication', function () {
+Flight::route('PUT /api/user/authentication', function () {
     User::Authentication();
 });
 
@@ -95,13 +96,17 @@ Flight::route('GET /api/user(/@id)', function ($id) {
 
 Flight::route('GET /api/kanban', function () {
 
-    if(User::$current == null){
+    if(Kanban::$current == null){
         Flight::ret(403, "Unauthorized");
         return;
     }
 
-    Kanban::$current = User::$current;
     Kanban::Kanban();
+});
+
+Flight::route('GET /api/boards(/@board_id)', function($board_id){
+    $method = Flight::request()->method;
+    Kanban::Boards($method, $board_id);
 });
 
 
