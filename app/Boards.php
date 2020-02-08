@@ -10,148 +10,162 @@ use App\Columns;
 use App\Kanban;
 use App\StatusCodes;
 
-class Boards{
+class Boards
+{
 
     public static $uid = 0;
 
     public $id = 0;
     public $title = "";
     public $note = "";
-    private $columns = Array();
+    private $columns = array();
 
-    function __construct($id, $title, $note){
+    function __construct($id, $title, $note)
+    {
 
         $this->id = $id;
         $this->title = $title;
         $this->note = $note;
 
         $ret = Flight::sql("SELECT * FROM `column` WHERE `board_id` ='$id'   ", true);
-        foreach($ret as $column){
-            $this->columns[(string)$column->id] = new Columns($column->id, $column->title, $column->note);
+        foreach ($ret as $column) {
+            $this->columns[(string) $column->id] = new Columns($column->id, $column->title, $column->note);
         }
-
     }
 
-    public function get(){
+    public function get()
+    {
         $arr = get_object_vars($this);
         $arr['column'] = [];
-        foreach($this->columns as $column){
+        foreach ($this->columns as $column) {
             $arr['column'][] = $column->get();
         }
         return $arr;
     }
 
-    public function getColumns($column_id){
-        if(array_key_exists($column_id, $this->columns)){
+    public function getColumns($column_id)
+    {
+        if (array_key_exists($column_id, $this->columns)) {
             return $this->columns[$column_id];
-        }else{
+        } else {
             return false;
         }
     }
 
-    private static function gets($user_id, $board_id = null){
-        if($board_id == null){
-            return Flight::sql("SELECT * FROM `board` WHERE `user_id`='$user_id'  ", true);
+    private static function gets($data)
+    {
+        if ($data->board_id != null) {
+            $ret = Flight::sql("SELECT * FROM `board` WHERE `user_id`='{$data->user_id}' AND `id`='{$data->board_id}'  ");
         }else{
-            return Flight::sql("SELECT * FROM `board` WHERE `user_id`='$user_id' AND `id`='$board_id'  ", true);
-        }
-    }
-
-    private static function creates($user_id, $title, $note){
-        $ret = Flight::sql("INSERT INTO `board`(`user_id`, `title`, `note`) VALUES ($user_id, '$title', '$note')  ");
-        if($ret === false){
-            return false;
-        }else{
-            $ret = Flight::sql("SELECT * FROM `board` WHERE `id`=LAST_INSERT_ID();  ");
-            return $ret;
-        }
-    }
-
-    private static function updates($user_id, $board_id, $title, $note){
-        $vars = [];
-        if($title != null){
-            $vars[] =  "`title`='$title'";
-        }
-        if($note != null){
-            $vars[] =  "`note`='$note'";
+            $ret = Flight::sql("SELECT * FROM `board` WHERE `user_id`='{$data->user_id}' ", true);
         }
         
-        $ret = Flight::sql("UPDATE `board` SET " . implode(", ", $vars) . " WHERE `id`=$board_id AND `user_id`=$user_id   ");
-        if($ret === false){
-            return false;
-        }else{
-            $ret = Flight::sql("SELECT * FROM `board` WHERE `id`=$board_id  ");
-            return $ret;
+        if ($ret === false) {
+            return [StatusCodes::SERVICE_ERROR, "Fail to get by database error", null];
+        } else {
+            return [StatusCodes::OK, "OK", $ret];
         }
     }
 
-    private static function deletes($user_id, $board_id){
-        $ret = Flight::sql("SELECT * FROM `board` WHERE `user_id`='$user_id' AND `id`='$board_id'  ");
-        if(empty($ret)){
+    private static function creates($data)
+    {
+        $ret = Flight::sql("INSERT INTO `board`(`user_id`, `title`, `note`) VALUES ({$data->user_id}, '{$data->title}', '{$data->note}')  ");
+        if ($ret === false) {
+            return [StatusCodes::SERVICE_ERROR, "Fail to create by database error", null];
+        } else {
+            $ret = Flight::sql("SELECT * FROM `board` WHERE `id`=LAST_INSERT_ID();  ");
+            return [StatusCodes::OK, "OK", $ret];
+        }
+    }
+
+    private static function updates($data)
+    {
+        $vars = [];
+        if ($data->title != null) {
+            $vars[] =  "`title`='$data->title'";
+        }
+        if ($data->note != null) {
+            $vars[] =  "`note`='$data->note'";
+        }
+
+        $ret = Flight::sql("UPDATE `board` SET " . implode(", ", $vars) . " WHERE `id`={$data->board_id} AND `user_id`={$data->user_id}   ");
+        if ($ret === false) {
+            return [StatusCodes::SERVICE_ERROR, "Fail to update by database error", null];
+        } else {
+            $ret = Flight::sql("SELECT * FROM `board` WHERE `id`={$data->board_id}  ");
+            return [StatusCodes::OK, "OK", $ret];
+        }
+    }
+
+    private static function deletes($data){
+        $ret = Flight::sql("SELECT * FROM `board` WHERE `user_id`='{$data->user_id}' AND `id`='{$data->board_id}'  ");
+        if (empty($ret)) {
             return [StatusCodes::FORBIDDEN, "Could not find board", null];
         }
-        
-        $ret = Flight::sql(<<<SQL
+
+        $ret = Flight::sql("
             BEGIN;
-            DELETE FROM `board` WHERE `id`=$board_id AND `user_id`=$user_id;
-            DELETE FROM `column` WHERE `board_id`=$board_id;
-            DELETE FROM `event` WHERE `board_id`=$board_id;
+            DELETE FROM `board` WHERE `id`={$data->board_id};
+            DELETE FROM `column` WHERE `board_id`={$data->board_id};
+            DELETE FROM `event` WHERE `board_id`={$data->board_id};
             COMMIT;
-        SQL);
-        if($ret === false){
-            return list(StatusCodes::SERVICE_ERROR, "Fail to delete by database error", null);
-        }else{
-            return list(StatusCodes::OK, null, null);
+        ");
+        if ($ret === false) {
+            Flight::db()->
+            return [StatusCodes::SERVICE_ERROR, "Fail to delete by database error", null];
+        } else {
+            return [StatusCodes::OK, null, null];
         }
     }
 
-    
 
-    public static function Boards($method, $board_id){
-        $user_id = Kanban::$current->id;
-        $data = Flight::request()->data;
 
+    public static function Boards($method, $board_id)
+    {
         $funct = "";
-        $args = Array();
-        
-        switch($method){
+        $args = array();
+
+        switch ($method) {
             case "GET":
                 $func = "gets";
-            break;
+                break;
             case "POST":
                 $func = "creates";
                 $args = ["title"];
-            break;
+                break;
             case "PATCH":
                 $func = "updates";
                 $args = ["board_id"];
-            break;
+                break;
             case "DELETE":
                 $func = "deletes";
                 $args = ["board_id"];
-            break;
+                break;
         }
 
         $miss = [];
+        $data = Flight::request()->data;
         $data->board_id = $board_id;
-        foreach($args as $key => $param){
-            if(!isset($data->$param)){
+        $data->user_id = Kanban::$current->id;
+        
+        foreach ($args as $key => $param) {
+            if (!isset($data->$param)) {
                 array_push($miss, $param);
             }
         }
 
-        if(!empty($miss)){
-            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Missing Params", Array("missing" => $miss));
+        // Escape
+        foreach($data as $key => $each){
+            $data->$key = addslashes($each);
+        }
+
+        if (!empty($miss)) {
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Missing Params", array("missing" => $miss));
             return;
         }
 
-        list($code, $message, $array) = self::$func($user_id, $board_id);
-        if($code > StatusCodes::errorCodesBeginAt){
-            Flight::ret($code, $message, $array);
-        }else{
-            Flight::ret($code);
-        }
-
+        list($code, $message, $array) = self::$func($data);
+        Flight::ret($code, $message, $array);
+        
     }
-
 }

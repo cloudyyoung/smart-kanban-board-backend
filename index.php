@@ -20,16 +20,18 @@ if (CONFIG['app']['debug']) {
 
 Flight::map('error', function (Throwable $e) {
     // Handle error
-    Flight::ret(500, "Internal Server Error");
+    $array = null;
+    $message = $e->getMessage();
     if (CONFIG['app']['debug']) {
         echo $e;
         echo $e->getTraceAsString();
+        $array = $e->getTrace();
     }
+    Flight::ret(500, $message, $array);
 });
 
 Flight::map('notFound', function () {
     // Handle not found
-    
 });
 
 
@@ -63,6 +65,7 @@ Flight::map('sql', function ($sql, $fetch_all = false) {
     
 });
 
+
 use App\StatusCodes;
 
 // RESTful
@@ -70,7 +73,7 @@ Flight::map('ret', function ($code = StatusCodes::NO_CONTENT, $message = '', $ar
     header(StatusCodes::httpHeaderFor($code));
     http_response_code($code);
 
-    if($code > StatusCodes::errorCodesBeginAt){
+    if($code >= StatusCodes::errorCodesBeginAt){
         $message = ucwords($message);
         Flight::json(Array(
             "error" => Array(
@@ -103,13 +106,13 @@ Flight::route('PUT /api/users/authentication', function () {
 
 Flight::route('GET /api/users(/@id)', function ($id) {
     if($id == "me") $id = null;
-    Users::Userss($id);
+    Users::Users($id);
 });
 
 
 Flight::route('GET /api/kanban', function () {
     if(Kanban::$current == null){
-        Flight::ret(403, "Unauthorized");
+        Flight::ret(403, "Unauthenticated Access");
         return;
     }
 
