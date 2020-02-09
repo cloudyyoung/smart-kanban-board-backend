@@ -93,6 +93,7 @@ Flight::map('ret', function ($code = StatusCodes::NO_CONTENT, $message = '', $ar
 use App\Users;
 use App\Kanban;
 use App\Boards;
+use App\Columns;
 
 if (isset($_SESSION['user'])) {
     Users::$current = unserialize($_SESSION['user']);
@@ -112,7 +113,7 @@ Flight::route('GET /api/users(/@id)', function ($id) {
 
 Flight::route('GET /api/kanban', function () {
     if(Kanban::$current == null){
-        Flight::ret(403, "Unauthenticated Access");
+        Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthenticated Access");
         return;
     }
 
@@ -121,16 +122,25 @@ Flight::route('GET /api/kanban', function () {
 
 Flight::route('GET|POST|PATCH|DELETE /api/boards(/@board_id:[0-9]+)', function($board_id){
     if(Kanban::$current == null){
-        Flight::ret(403, "Unauthorized");
+        Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
         return;
     }
 
     $method = Flight::request()->method;
     Boards::Boards($method, $board_id);
 });
+Flight::route('GET|POST|PATCH|DELETE /api/columns(/@board_id:[0-9]+)', function($column_id){
+    if(Kanban::$current == null){
+        Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
+        return;
+    }
+
+    $method = Flight::request()->method;
+    Columns::Columns($method, $column_id);
+});
 
 Flight::route('/api/*', function () {
-    Flight::ret(501, "Not Implemented");
+    Flight::ret(StatusCodes::NOT_IMPLEMENTED, "Not Implemented");
 });
 
 
