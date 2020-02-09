@@ -1,13 +1,11 @@
 <?php
 
-
 namespace App;
 
 use Flight;
-use Throwable;
 
-
-class Users{
+class Users
+{
 
     public static $current = null; // current id
 
@@ -18,35 +16,34 @@ class Users{
     public $existing = false;
     private $password = "";
 
-
-    function __construct($id = null){
+    public function __construct($id = null)
+    {
 
         $ret = [];
-        if(is_numeric($id)){ // giving id or not
+        if (is_numeric($id)) { // giving id or not
             $ret = Flight::sql("SELECT `username`, `id` FROM `user` WHERE `id` = '$id'  ");
-        }else if($id != null){ // giving username
+        } else if ($id != null) { // giving username
             $ret = Flight::sql("SELECT `username`, `id` FROM `user` WHERE `username` = '$id'  ");
-        }else{
+        } else {
             return;
         }
 
-        if(!empty($ret)){
+        if (!empty($ret)) {
             $this->existing = true;
             $this->username = $ret->username;
             $this->id = $ret->id;
         }
 
-        if(self::$current != null && (self::$current->id == $this->id || self::$current->username == $this->username)){
+        if (self::$current != null && (self::$current->id == $this->id || self::$current->username == $this->username)) {
             $this->authenticated = true;
             $this->sessid = session_id();
         }
-
     }
 
+    private function authenticate($username, $password)
+    {
 
-    private function authenticate($username, $password){
-
-        if($username == null || $password == null){
+        if ($username == null || $password == null) {
             return false;
         }
 
@@ -69,50 +66,49 @@ class Users{
         return true;
     }
 
-    public function save(){
+    public function save()
+    {
         self::$current = $this;
         $_SESSION['user'] = serialize($this); // store user in current session
     }
 
-    public static function Authentication(){
+    public static function Authentication()
+    {
 
         $user = new Users();
 
         $username = Flight::request()->data['username'];
         $password = Flight::request()->data['password'];
 
-        if(!$user->authenticate($username, $password)){
+        if (!$user->authenticate($username, $password)) {
             Flight::ret(403, "Failed Authentication");
-        }else{
+        } else {
             $user->save();
             Flight::ret(200, "OK", $user);
         }
-
     }
 
-    public static function Userss($id = null){
+    public static function Users($id = null)
+    {
 
         $user = null;
         $tryCurrent = false;
 
-        if($id != null){ // specific user
+        if ($id != null) { // specific user
             $user = new Users($id);
-        }else if(self::$current != null){ // currently has authenticated in user
+        } else if (self::$current != null) { // currently has authenticated in user
             $user = self::$current;
-        }else{
+        } else {
             $tryCurrent = true; // try visit /api/user/ (default user)
             $user = new Users();
         }
-        
-        if($user->existing){ // existing user query
+
+        if ($user->existing) { // existing user query
             Flight::ret(200, "OK", $user);
-        }else if($tryCurrent){
+        } else if ($tryCurrent) {
             Flight::ret(401, "Unauthorized");
-        }else{
+        } else {
             Flight::ret(404, "Not Found");
         }
-
     }
-
-
 }
