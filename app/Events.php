@@ -21,8 +21,8 @@ class Events{
     function __construct($id, $title, $note, $board_id, $column_id){
 
         $this->id = (int)$id;
-        $this->board_id = $board_id;
-        $this->column_id = $column_id;
+        $this->board_id = (int)$board_id;
+        $this->column_id = (int)$column_id;
         $this->title = $title;
         $this->note = $note;
 

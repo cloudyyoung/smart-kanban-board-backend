@@ -22,7 +22,7 @@ class Columns{
     function __construct($id, $title, $note, $board_id){
 
         $this->id = (int)$id;
-        $this->board_id = $board_id;
+        $this->board_id = (int)$board_id;
         $this->title = $title;
         $this->note = $note;
 
