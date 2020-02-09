@@ -16,41 +16,51 @@ class Boards
     public static $uid = 0;
 
     public $id = 0;
+    public $user_id = 0;
     public $title = "";
     public $note = "";
     private $columns = array();
 
-    function __construct($id, $title, $note)
+    function __construct($id, $title, $note, $user_id)
     {
 
-        $this->id = $id;
+        $this->id = (int)$id;
+        $this->user_id = $user_id;
         $this->title = $title;
         $this->note = $note;
 
-        $ret = Flight::sql("SELECT * FROM `column` WHERE `board_id` ='$id'   ", true);
+        Kanban::$dictionary['boards'][(string)$this->id] = Array(
+            "user_id" => $this->user_id,
+        );
+
+        $this->fetch();
+    }
+
+    public function fetch(){
+        $this->columns = [];
+        $ret = Flight::sql("SELECT * FROM `column` WHERE `board_id` ='{$this->id}'   ", true);
         foreach ($ret as $column) {
-            $this->columns[(string) $column->id] = new Columns($column->id, $column->title, $column->note);
+            $this->columns[(string)$column->id] = new Columns($column->id, $column->title, $column->note, $this->id);
         }
     }
 
-    public function get()
-    {
+    public function get($column_id = null)
+    {   
+        if(isset($column_id)){
+            if (array_key_exists($column_id, $this->columns)) {
+                return $this->columns[$column_id]->get();
+            } else {
+                return false;
+            }
+        }
         $arr = get_object_vars($this);
-        $arr['column'] = [];
+        $arr['columns'] = [];
         foreach ($this->columns as $column) {
-            $arr['column'][] = $column->get();
+            $arr['columns'][] = $column->get();
         }
         return $arr;
     }
 
-    public function getColumns($column_id)
-    {
-        if (array_key_exists($column_id, $this->columns)) {
-            return $this->columns[$column_id];
-        } else {
-            return false;
-        }
-    }
 
     private static function gets($data)
     {

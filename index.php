@@ -93,11 +93,14 @@ Flight::map('ret', function ($code = StatusCodes::NO_CONTENT, $message = '', $ar
 use App\Users;
 use App\Kanban;
 use App\Boards;
-use App\Columns;
 
 if (isset($_SESSION['user'])) {
-    Users::$current = unserialize($_SESSION['user']);
-    Kanban::$current = Users::$current;
+    Users::$current = Kanban::$current = unserialize($_SESSION['user']);
+}
+
+if(isset($_SESSION['kanban']) && isset($_SESSION['dictionary'])){
+    Kanban::$boards = unserialize($_SESSION['kanban']);
+    Kanban::$dictionary = unserialize($_SESSION['dictionary']);
 }
 
 
@@ -128,15 +131,6 @@ Flight::route('GET|POST|PATCH|DELETE /api/boards(/@board_id:[0-9]+)', function($
 
     $method = Flight::request()->method;
     Boards::Boards($method, $board_id);
-});
-Flight::route('GET|POST|PATCH|DELETE /api/columns(/@board_id:[0-9]+)', function($column_id){
-    if(Kanban::$current == null){
-        Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
-        return;
-    }
-
-    $method = Flight::request()->method;
-    Columns::Columns($method, $column_id);
 });
 
 Flight::route('/api/*', function () {
