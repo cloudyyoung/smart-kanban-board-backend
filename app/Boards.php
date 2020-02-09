@@ -114,7 +114,7 @@ class Boards
         if ($ret === false) {
             return [StatusCodes::SERVICE_ERROR, "Fail to delete by database error", Flight::db()->error];
         } else {
-            return [StatusCodes::OK, null, null];
+            return [StatusCodes::NO_CONTENT, null, null];
         }
     }
 
