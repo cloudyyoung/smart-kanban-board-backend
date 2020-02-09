@@ -44,8 +44,8 @@ Flight::map('sql', function ($sql, $fetch_all = false) {
     $db = Flight::db();
     $res = $db->query($sql);
 
-    if (is_bool($res)) {
-        return $res;
+    if ($res === false) {
+        return false;
     }
 
     $ret = [];
@@ -62,7 +62,40 @@ Flight::map('sql', function ($sql, $fetch_all = false) {
             return [];
         }
     }
+});
+
+Flight::map('sqlm', function($sql, $fetch_all = false){
+    $db = Flight::db();
+    $res = $db->multi_query($sql);
+
+    if ($res === false) {
+        var_dump(977);
+        return $res;
+    }
+
+    $ret = [];
+    if ($res) {
+        do {
+            $times ++;
+            if($times > 10){
+                break;
+            }
+            /* store first result set */
+            if ($result = $db->store_result()) {
+                while ($row = $result->fetch_row()) {
+                    $ret[] = $row;
+                }
+                $result->free();
+            }
+            /* print divider */
+            if ($db->more_results()) {
+
+            }
+        } while ($db->next_result());
+    }
+
     
+    return $ret;
 });
 
 
@@ -131,6 +164,10 @@ Flight::route('GET|POST|PATCH|DELETE /api/boards(/@board_id:[0-9]+)', function($
 
     $method = Flight::request()->method;
     Boards::Boards($method, $board_id);
+});
+
+Flight::route('/api/dictionary', function () {
+    Flight::ret(StatusCodes::OK, "OK", Kanban::$dictionary);
 });
 
 Flight::route('/api/*', function () {

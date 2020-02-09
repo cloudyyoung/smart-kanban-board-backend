@@ -26,14 +26,12 @@ class Events{
         $this->title = $title;
         $this->note = $note;
 
-        Kanban::$dictionary['events'][(string)$this->id] = Array(
-            "board_id" => $this->board_id,
-            "column_id" => $this->column_id,
-        );
+        Kanban::$dictionary['columns'][(string)$this->column_id]["events"][] = $this->id;
+        Kanban::$dictionary['boards'][(string)$this->board_id]["events"][] = $this->id;
 
     }
 
-    public function get(){
+    public function print(){
         return get_object_vars($this);
     }
 

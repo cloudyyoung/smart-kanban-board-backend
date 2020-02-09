@@ -31,9 +31,17 @@ class Boards
 
         Kanban::$dictionary['boards'][(string)$this->id] = Array(
             "user_id" => $this->user_id,
+            "columns" => Array(),
+            "events" => Array(),
         );
 
         $this->fetch();
+    }
+
+    public function set($title, $note){
+        $this->title = $title;
+        $this->note = $note;
+        Kanban::save();
     }
 
     public function fetch(){
@@ -44,11 +52,11 @@ class Boards
         }
     }
 
-    public function get($column_id = null)
+    public function print($column_id = null)
     {   
         if(isset($column_id)){
             if (array_key_exists($column_id, $this->columns)) {
-                return $this->columns[$column_id]->get();
+                return $this->columns[$column_id]->print();
             } else {
                 return false;
             }
@@ -56,10 +64,11 @@ class Boards
         $arr = get_object_vars($this);
         $arr['columns'] = [];
         foreach ($this->columns as $column) {
-            $arr['columns'][] = $column->get();
+            $arr['columns'][] = $column->print();
         }
         return $arr;
     }
+
 
 
     private static function gets($data)
@@ -72,10 +81,31 @@ class Boards
         
         if ($ret === false) {
             return [StatusCodes::SERVICE_ERROR, "Fail to get by database error", Flight::db()->error];
-        }else if (empty($ret)) {
+        }else if (empty($ret) && $data->board_id != null) {
             return [StatusCodes::FORBIDDEN, "Could not find board", null];
-        } else {
-            return [StatusCodes::OK, "OK", $ret];
+        }else if (empty($ret) && $data->board_id == null) {
+            return [StatusCodes::OK, "OK", Kanban::print()];
+        }else{
+            if($data->board_id != null){
+                $node = Kanban::find(false, $ret->id);
+                $node->set($ret->title, $ret->note);
+                if(isset(Flight::request()->query->force)){
+                    $node->fetch();
+                }
+                $node = $node->print();
+            }else{
+                foreach($ret as $each){
+                    $node = Kanban::find(false, $each->id);
+                    $node->set($each->title, $each->note);
+                    if(isset(Flight::request()->query->force)){
+                        $node->fetch();
+                    }
+                }
+                
+                $node = Kanban::print();
+            }
+            
+            return [StatusCodes::OK, "OK", $node];
         }
     }
 
@@ -86,7 +116,10 @@ class Boards
             return [StatusCodes::SERVICE_ERROR, "Fail to create by database error", Flight::db()->error];
         } else {
             $ret = Flight::sql("SELECT * FROM `board` WHERE `id`=LAST_INSERT_ID();  ");
-            return [StatusCodes::CREATED, "OK", $ret];
+            $node = new Boards($ret->id, $ret->user_id, $ret->title, $ret->note);
+            Kanban::$boards[] = $node;
+            $node->set($ret->title, $ret->note);
+            return [StatusCodes::CREATED, "OK", $node->print()];
         }
     }
 
@@ -109,8 +142,9 @@ class Boards
         if ($ret === false) {
             return [StatusCodes::SERVICE_ERROR, "Fail to update by database error", Flight::db()->error];
         } else {
-            $ret = Flight::sql("SELECT * FROM `board` WHERE `id`={$data->board_id}  ");
-            return [StatusCodes::OK, "OK", $ret];
+            $node = Kanban::find(false, $data->board_id);
+            $node->set($ret->title, $ret->note);
+            return [StatusCodes::OK, "OK", $node];
         }
     }
 
@@ -119,11 +153,27 @@ class Boards
         if (empty($ret)) {
             return [StatusCodes::FORBIDDEN, "Could not find board", null];
         }
+        $events_id = Kanban::$dictionary['boards'][$data->board_id]['events'];
+        $columns_id = Kanban::$dictionary['boards'][$data->board_id]['columns'];
 
-        $ret = Flight::sql("DELETE `board`, `column`, `event` FROM `board` LEFT JOIN `column` ON `column`.`board_id` = `board`.`id` LEFT JOIN `event` ON `event`.`board_id` = `board`.`id` WHERE `board`.`id`={$data->board_id} ");
+        $sql = "DELETE FROM `board` WHERE `id`={$data->board_id}; ";
+
+        foreach($columns_id as $each_column_id){
+            $sql .= "DELETE FROM `column` WHERE `id`={$each_column_id}; ";
+        }
+
+        foreach($events_id as $each_event_id){
+            $sql .= "DELETE FROM `event` WHERE `id`={$each_event_id}; ";
+        }
+
+        $ret = Flight::sqlm($sql);
         if ($ret === false) {
             return [StatusCodes::SERVICE_ERROR, "Fail to delete by database error", Flight::db()->error];
         } else {
+            $ret = Kanban::fetch();
+            if(!$ret){
+                return [StatusCodes::SERVICE_ERROR, "database fetch fail", Flight::db()->error];
+            }
             return [StatusCodes::NO_CONTENT, null, null];
         }
     }

@@ -26,8 +26,10 @@ class Columns{
         $this->title = $title;
         $this->note = $note;
 
+        Kanban::$dictionary['boards'][(string)$this->board_id]["columns"][] = $this->id;
         Kanban::$dictionary['columns'][(string)$this->id] = Array(
             "board_id" => $this->board_id,
+            "events" => [],
         );
 
         $this->fetch();
@@ -41,10 +43,10 @@ class Columns{
         }
     }
     
-    public function get($event_id = null){
+    public function print($event_id = null){
         if(isset($event_id)){
             if(array_key_exists($event_id, $this->events)){
-                return $this->column[$event_id]->get();
+                return $this->column[$event_id]->print();
             }else{
                 return false;
             }
@@ -52,7 +54,7 @@ class Columns{
         $arr = get_object_vars($this);
         $arr['events'] = [];
         foreach($this->events as $event){
-            $arr['events'][] = $event->get();
+            $arr['events'][] = $event->print();
         }
         return $arr;
     }
