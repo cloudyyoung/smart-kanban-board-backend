@@ -76,7 +76,7 @@ class Boards
             return [StatusCodes::SERVICE_ERROR, "Fail to create by database error", Flight::db()->error];
         } else {
             $ret = Flight::sql("SELECT * FROM `board` WHERE `id`=LAST_INSERT_ID();  ");
-            return [StatusCodes::OK, "OK", $ret];
+            return [StatusCodes::CREATED, "OK", $ret];
         }
     }
 
