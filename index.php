@@ -40,61 +40,37 @@ Flight::register('db', 'mysqli', array(CONFIG['database']['host'], CONFIG['datab
     $db->set_charset("utf8");
 });
 
-Flight::map('sql', function ($sql, $fetch_all = false) {
+Flight::map('sql', function($sql, $fetch_all = false){
     $db = Flight::db();
-    $res = $db->query($sql);
+    $res = $db->multi_query($sql);
 
     if ($res === false) {
         return false;
     }
 
     $ret = [];
-    while ($row = $res->fetch_assoc()) {
-        $ret[] = (object) $row;
-    }
-
-    if ($fetch_all) {
-        return $ret;
-    }else{
-        if(!empty($ret)){
-            return (object)$ret[0];
-        }else{
-            return [];
+    do {
+        $result = $db->store_result();
+        if ($result instanceof mysqli_result){ //select
+            $temp = [];
+            while ($row = $result->fetch_assoc()){
+                $temp[] = (object)$row;
+            }
+            $ret[] = $temp;
+        }else{ //insert/update/delete
+            $ret[] = Array($result);
+        }
+ 
+    } while ($db->more_results() && $db->next_result());  //must invoke more_result() before next_result()
+    
+    if(count($ret) == 1){ // one query
+        $ret = $ret[0];
+        if($fetch_all == false && count($ret) >= 1){ // only first row
+            $ret = $ret[0];
         }
     }
-});
-
-Flight::map('sqlm', function($sql, $fetch_all = false){
-    $db = Flight::db();
-    $res = $db->multi_query($sql);
-
-    if ($res === false) {
-        var_dump(977);
-        return $res;
-    }
-
-    $ret = [];
-    if ($res) {
-        do {
-            $times ++;
-            if($times > 10){
-                break;
-            }
-            /* store first result set */
-            if ($result = $db->store_result()) {
-                while ($row = $result->fetch_row()) {
-                    $ret[] = $row;
-                }
-                $result->free();
-            }
-            /* print divider */
-            if ($db->more_results()) {
-
-            }
-        } while ($db->next_result());
-    }
-
     
+
     return $ret;
 });
 
@@ -166,9 +142,6 @@ Flight::route('GET|POST|PATCH|DELETE /api/boards(/@board_id:[0-9]+)', function($
     Boards::Boards($method, $board_id);
 });
 
-Flight::route('/api/dictionary', function () {
-    Flight::ret(StatusCodes::OK, "OK", Kanban::$dictionary);
-});
 
 Flight::route('/api/*', function () {
     Flight::ret(StatusCodes::NOT_IMPLEMENTED, "Not Implemented");

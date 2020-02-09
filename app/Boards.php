@@ -101,7 +101,6 @@ class Boards
                         $node->fetch();
                     }
                 }
-                
                 $node = Kanban::print();
             }
             
@@ -166,7 +165,7 @@ class Boards
             $sql .= "DELETE FROM `event` WHERE `id`={$each_event_id}; ";
         }
 
-        $ret = Flight::sqlm($sql);
+        $ret = Flight::sql($sql, true);
         if ($ret === false) {
             return [StatusCodes::SERVICE_ERROR, "Fail to delete by database error", Flight::db()->error];
         } else {
