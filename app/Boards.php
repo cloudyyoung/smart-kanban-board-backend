@@ -62,6 +62,8 @@ class Boards
         
         if ($ret === false) {
             return [StatusCodes::SERVICE_ERROR, "Fail to get by database error", Flight::db()->error];
+        }else if (empty($ret)) {
+            return [StatusCodes::FORBIDDEN, "Could not find board", null];
         } else {
             return [StatusCodes::OK, "OK", $ret];
         }
@@ -80,6 +82,11 @@ class Boards
 
     private static function updates($data)
     {
+        $ret = Flight::sql("SELECT * FROM `board` WHERE `id`={$data->board_id} AND `user_id`={$data->user_id}");
+        if(empty($ret)){
+            return [StatusCodes::FORBIDDEN, "Could not find board", null];
+        }
+
         $vars = [];
         if ($data->title != null) {
             $vars[] =  "`title`='$data->title'";
@@ -115,7 +122,7 @@ class Boards
 
     public static function Boards($method, $board_id)
     {
-        $funct = "";
+        $funct = null;
         $args = array();
 
         switch ($method) {
@@ -134,6 +141,11 @@ class Boards
                 $func = "deletes";
                 $args = ["board_id"];
                 break;
+        }
+
+        if($func == null){
+            Flight::ret(StatusCodes::NOT_IMPLEMENTED, "Not Implemented");
+            return;
         }
 
         $miss = [];
