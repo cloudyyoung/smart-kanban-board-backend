@@ -108,7 +108,7 @@ class Users
         } else if ($tryCurrent) {
             Flight::ret(401, "Unauthorized");
         } else {
-            Flight::ret(404, "Not Found");
+            Flight::ret(404, "No matching user");
         }
     }
 }
