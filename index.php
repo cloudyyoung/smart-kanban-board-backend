@@ -79,7 +79,7 @@ Flight::map('ret', function ($code = StatusCodes::NO_CONTENT, $message = '', $ar
             "error" => Array(
                 "code" => $code,
                 "message" => $message,
-                "details" => $array
+                "details" => $array,
             )
         ));
     }else if (!empty($array)) {
