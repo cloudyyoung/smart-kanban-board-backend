@@ -45,7 +45,7 @@ Flight::map('sql', function($sql, $fetch_all = false){
     $res = $db->multi_query($sql);
 
     if ($res === false) {
-        return false;
+        return $res;
     }
 
     $ret = [];
@@ -105,13 +105,8 @@ use App\Boards;
 
 if (isset($_SESSION['user'])) {
     Users::$current = Kanban::$current = unserialize($_SESSION['user']);
+    Kanban::fetch();
 }
-
-if(isset($_SESSION['kanban']) && isset($_SESSION['dictionary'])){
-    Kanban::$nodes = unserialize($_SESSION['kanban']);
-    Kanban::$dictionary = unserialize($_SESSION['dictionary']);
-}
-
 
 Flight::route('PUT /api/users/authentication', function () {
     Users::Authentication();

@@ -34,7 +34,6 @@ class Nodes{
     public function set($title, $note){
         $this->title = $title;
         $this->note = $note;
-        Kanban::save();
     }
 
     private function setDictionary(){
@@ -53,8 +52,6 @@ class Nodes{
             Kanban::$dictionary[$this->type][$this->id][$grandparent."_id"] = $this->grandparent_id;
             Kanban::$dictionary[$grandparent][$this->grandparent_id][$this->type][] = $this->id;
         }
-
-        Kanban::save();
     }
 
     private function getParentType($level = 1){
@@ -85,7 +82,7 @@ class Nodes{
         }
     }
 
-    public function child($id = null){
+    public function getChild($id = null){
         if(array_key_exists($id, $this->nodes)){
             return $this->nodes[$id];
         }else if(!isset($id)){
@@ -125,44 +122,109 @@ class Nodes{
         return $arr;
     }
 
-    protected static function gets($data){
+    private static function Get($data){
+        $node = Kanban::find($data->type, $data->node_id);
+        if($node === false){
+            return [StatusCodes::NOT_FOUND, "Target Not Found", null];
+        }
+        return [StatusCodes::OK, "OK", $node->print()];
+    }
+
+    private static function Create($data){
+        $parent_type = Kanban::getParentType($data->type);
+        $parent_node = Kanban::find(Kanban::getParentType($data->type), $data->parent_id);
+        if($parent_node === false && $parent_type != "user"){
+            return [StatusCodes::NOT_FOUND, "Target Parent " . $parent_type . " Not Found", null];
+        }
+
+        $parent_name = Kanban::getParentType($data->type) . "_id";
+        $parent_id = $data->$parent_name;
+        $ret = Flight::sql("INSERT INTO `{$data->type}` (`{$parent_name}`, `title`, `note`) VALUES ({$parent_id}, '{$data->title}', '{$data->note}')  ");
+        if ($ret === false && Flight::db()->error != "") {
+            return [StatusCodes::SERVICE_ERROR, "Fail to create by database error", Flight::db()->error];
+        }
+
         return [StatusCodes::OK, "OK", null];
     }
 
-    protected static function creates($data){
+    private static function Update($data){
+        $node = Kanban::find($data->type, $data->node_id);
+        if($node === false){
+            return [StatusCodes::NOT_FOUND, "Target " . $data->type . " Not Found", null];
+        }
+
+        $vars = [];
+        if ($data->title != null) {
+            $vars[] =  "`title`='{$data->title}'";
+        }
+        if ($data->note != null) {
+            $vars[] =  "`note`='{$data->note}'";
+        }
+        $sql = "UPDATE `{$data->type}` SET " . implode(", ", $vars) . " WHERE `id`={$data->node_id}   ";
+        $ret = Flight::sql($sql);
+        if ($ret === false && Flight::db()->error != "") {
+            return [StatusCodes::SERVICE_ERROR, "Fail to update by database error", Flight::db()->error];
+        }
+
         return [StatusCodes::OK, "OK", null];
     }
 
-    protected static function updates($data){
-        return [StatusCodes::OK, "OK", null];
-    }
+    private static function Delete($data){
+        $node = Kanban::find($data->type, $data->node_id);
+        if($node === false){
+            return [StatusCodes::NOT_FOUND, "Target " . $data->type . " Not Found", null];
+        }
 
-    protected static function deletes($data){
-        return [StatusCodes::OK, "OK", null];
+        $child = Kanban::getChildrenType($data->type);
+        $grandchild = Kanban::getChildrenType($data->type, 2);
+        $children_id = [];
+        $grandchildren_id = [];
+        if($child !== false){
+            $children_id = Kanban::$dictionary[$data->type][$data->node_id][$child];
+        }
+        if($grandchild !== false){
+            $grandchildren_id = Kanban::$dictionary[$data->type][$data->node_id][$grandchild];
+        }
+
+        $sql = "DELETE FROM `board` WHERE `id`={$data->node_id}; ";
+        foreach($children_id as $each_id){
+            $sql .= "DELETE FROM `{$child}` WHERE `id`={$each_id}; ";
+        }
+        foreach($grandchildren_id as $each_id){
+            $sql .= "DELETE FROM `{$grandchild}` WHERE `id`={$each_id}; ";
+        }
+
+        $ret = Flight::sql($sql, true);
+        if ($ret === false && Flight::db()->error != "") {
+            return [StatusCodes::SERVICE_ERROR, "Fail to delete by database error", Flight::db()->error];
+        }
+
+        return [StatusCodes::NO_CONTENT, null, null];
     }
 
     
-    public static function Nodes($method, $node_id)
+    public static function Nodes($method, $node_id, $type)
     {
         $func = null;
         $args = array();
 
         switch ($method) {
             case "GET":
-                $func = "gets";
-                break;
+                $func = "Get";
+                $args = ["node_id"];
+            break;
             case "POST":
-                $func = "creates";
-                $args = ["title"];
-                break;
+                $func = "Create";
+                $args = ["title", Kanban::getParentType($type) . "_id"];
+            break;
             case "PATCH":
-                $func = "updates";
+                $func = "Update";
                 $args = ["node_id"];
-                break;
+            break;
             case "DELETE":
-                $func = "deletes";
+                $func = "Delete";
                 $args = ["node_id"];
-                break;
+            break;
         }
 
         if($func == null){
@@ -173,6 +235,7 @@ class Nodes{
         $miss = [];
         $data = Flight::request()->data;
         $data->node_id = $node_id;
+        $data->type = $type;
         $data->user_id = Kanban::$current->id;
         
         foreach ($args as $key => $param) {

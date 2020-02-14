@@ -14,6 +14,7 @@ class Kanban{
     public static $nodes = null; // for current user
     public static $dictionary = null;
     public static $typeList = Array(
+        0 => "user",
         1 => "board",
         2 => "column",
         3 => "event",
@@ -47,13 +48,7 @@ class Kanban{
             self::$nodes[$board->id] = new Boards($board->id, null, $board->title, $board->note, $board->user_id);
         }
 
-        self::save();
         return true;
-    }
-
-    public static function save(){
-        $_SESSION['kanban'] = serialize(self::$nodes);
-        $_SESSION['dictionary'] = serialize(self::$dictionary);
     }
 
     public static function print(){
@@ -65,9 +60,6 @@ class Kanban{
     }
 
     public static function find($type, $id){
-        if(!isset(self::$nodes)){
-            self::fetch(self::$current->id);
-        }
         if(!array_key_exists($type, self::$dictionary)){
             return false;
         }else if(!array_key_exists($id, self::$dictionary[$type])){
@@ -88,18 +80,18 @@ class Kanban{
 
         $ret = null;
         if(isset($board_id)){
-            $ret = self::child($board_id);
+            $ret = self::getChild($board_id);
         }
         if(isset($column_id) && $ret !== false){
-            $ret = $ret->child($column_id);
+            $ret = $ret->getChild($column_id);
         }
         if(isset($event_id) && $ret !== false){
-            $ret = $ret->find($event_id);
+            $ret = $ret->getChild($event_id);
         }
         return $ret;
     }
 
-    public static function child($id){
+    public static function getChild($id){
         if(array_key_exists($id, self::$nodes)){
             return self::$nodes[$id];
         }else{
@@ -107,7 +99,7 @@ class Kanban{
         }
     }
 
-    public static function getParentType($type, $level){
+    public static function getParentType($type, $level = 1){
         $value = array_flip(Kanban::$typeList)[$type];
         return (array_key_exists($value - $level, Kanban::$typeList)) ? Kanban::$typeList[$value - $level] : false;
     }
@@ -117,15 +109,9 @@ class Kanban{
         return (array_key_exists($value + $level, Kanban::$typeList)) ? Kanban::$typeList[$value + $level] : false;
     }
 
-    
+
 
     public static function Kanban(){
-        if(!isset(self::$nodes) || isset(Flight::request()->query->force)){
-            if(!self::fetch()){
-                Flight::ret(540, "Service Error", Flight::db()->error);
-                return;
-            }
-        }
         $result = self::print();
         Flight::ret(200, "OK", $result);
     }
