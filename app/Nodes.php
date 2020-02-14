@@ -21,26 +21,6 @@ class Nodes{
     private $type = ""; // whether board, column or event
     private $class = "";
 
-    private static $typeList = Array(
-        1 => "board",
-        2 => "column",
-        3 => "event",
-    );
-    private static $typeDictionary = Array(
-        "board" => Array(
-            "columns" => [],
-            "events" => [],
-        ),
-        "column" => Array(
-            "board_id" => 0,
-            "events" => [],
-        ),
-        "event" => Array(
-            "board_id" => 0,
-            "column_id" => 0,
-        )
-    );
-
     function __construct($id, $parent_id, $title = "", $note = ""){
         $this->id = (int)$id;
         $this->class = get_class($this);
@@ -51,10 +31,6 @@ class Nodes{
         $this->fetch();
     }
 
-    public function setNodes($nodes){
-        $this->nodes = $nodes;
-    }
-
     public function set($title, $note){
         $this->title = $title;
         $this->note = $note;
@@ -63,30 +39,30 @@ class Nodes{
 
     private function setDictionary(){
         // Add into category
-        Kanban::$dictionary[$this->type."s"][$this->id] = self::$typeDictionary[$this->type];
+        Kanban::$dictionary[$this->type][$this->id] = Kanban::$typeDictionary[$this->type];
 
         // Add into parent
         $parent = $this->getParentType();
         if($parent !== false && isset($this->parent_id)){
-            Kanban::$dictionary[$this->type."s"][$this->id][$parent."_id"] = $this->parent_id;
-            Kanban::$dictionary[$parent."s"][$this->parent_id][$this->type."s"][] = $this->id;
+            Kanban::$dictionary[$this->type][$this->id][$parent."_id"] = $this->parent_id;
+            Kanban::$dictionary[$parent][$this->parent_id][$this->type][] = $this->id;
         }
 
         $grandparent = $this->getParentType(2);
         if($grandparent !== false && isset($this->grandparent_id)){
-            Kanban::$dictionary[$this->type."s"][$this->id][$grandparent."_id"] = $this->grandparent_id;
-            Kanban::$dictionary[$grandparent."s"][$this->grandparent_id][$this->type."s"][] = $this->id;
+            Kanban::$dictionary[$this->type][$this->id][$grandparent."_id"] = $this->grandparent_id;
+            Kanban::$dictionary[$grandparent][$this->grandparent_id][$this->type][] = $this->id;
         }
+
+        Kanban::save();
     }
 
     private function getParentType($level = 1){
-        $value = array_flip(self::$typeList)[$this->type];
-        return (array_key_exists($value - $level, self::$typeList)) ? self::$typeList[$value - $level] : false;
+        return Kanban::getParentType($this->type, $level);
     }
 
     private function getChildrenType($level = 1){
-        $value = array_flip(self::$typeList)[$this->type];
-        return (array_key_exists($value + $level, self::$typeList)) ? self::$typeList[$value + $level] : false;
+        return Kanban::getChildrenType($this->type, $level);
     }
 
     public function fetch($childOnly = true){
@@ -106,6 +82,16 @@ class Nodes{
         $ret = Flight::sql("SELECT * FROM `$tableName` WHERE `{$this->type}_id` ='{$this->id}'   ", true);
         foreach ($ret as $node) {
             $this->nodes[$node->id] = new $nodesClass($node->id, $this->id, $node->title, $node->note, $this->parent_id);
+        }
+    }
+
+    public function child($id = null){
+        if(array_key_exists($id, $this->nodes)){
+            return $this->nodes[$id];
+        }else if(!isset($id)){
+            return $this->nodes;
+        }else{
+            return false;
         }
     }
 
@@ -158,7 +144,7 @@ class Nodes{
     
     public static function Nodes($method, $node_id)
     {
-        $funct = null;
+        $func = null;
         $args = array();
 
         switch ($method) {

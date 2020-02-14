@@ -1,11 +1,6 @@
 <?php
 
-
 namespace App;
-
-use Flight;
-use Throwable;
-
 
 class Events extends Nodes{
 
@@ -13,6 +8,5 @@ class Events extends Nodes{
         $this->grandparent_id = isset($grandparent_id) ? (int)$grandparent_id : null;
         parent::__construct($id, $parent_id, $title, $note);
     }
-
 
 }

@@ -108,7 +108,7 @@ if (isset($_SESSION['user'])) {
 }
 
 if(isset($_SESSION['kanban']) && isset($_SESSION['dictionary'])){
-    Kanban::$boards = unserialize($_SESSION['kanban']);
+    Kanban::$nodes = unserialize($_SESSION['kanban']);
     Kanban::$dictionary = unserialize($_SESSION['dictionary']);
 }
 
