@@ -22,10 +22,10 @@ class Kanban{
             "events" => [],
         );
 
-        $id = self::$current->id;
-        $ret = Flight::sql("SELECT * FROM `board` WHERE `user_id`='$id'  ", true);
+        $user_id = self::$current->id;
+        $ret = Flight::sql("SELECT * FROM `board` WHERE `user_id`='$user_id'  ", true);
         foreach($ret as $board){
-            self::$boards[(string)$board->id] = new Boards($board->id, $board->title, $board->note, $board->user_id);
+            self::$boards[$board->id] = new Boards($board->id, null, $board->title, $board->note, $board->user_id);
         }
 
         self::save();

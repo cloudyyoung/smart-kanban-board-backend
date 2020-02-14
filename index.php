@@ -142,6 +142,10 @@ Flight::route('GET|POST|PATCH|DELETE /api/boards(/@board_id:[0-9]+)', function($
     Boards::Boards($method, $board_id);
 });
 
+Flight::route('/api/dic', function () {
+    Flight::ret(StatusCodes::OK, "OK", Kanban::$dictionary);
+});
+
 
 Flight::route('/api/*', function () {
     Flight::ret(StatusCodes::NOT_IMPLEMENTED, "Not Implemented");
