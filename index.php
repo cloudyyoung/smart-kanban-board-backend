@@ -101,7 +101,7 @@ Flight::map('ret', function ($code = StatusCodes::NO_CONTENT, $message = '', $ar
 
 use App\Users;
 use App\Kanban;
-use App\Boards;
+use App\Nodes;
 
 if (isset($_SESSION['user'])) {
     Users::$current = Kanban::$current = unserialize($_SESSION['user']);
@@ -127,14 +127,19 @@ Flight::route('GET /api/kanban', function () {
     Kanban::Kanban();
 });
 
-Flight::route('GET|POST|PATCH|DELETE /api/boards(/@board_id:[0-9]+)', function($board_id){
+Flight::route('GET|POST|PATCH|DELETE /api/@type(/@node_id:[0-9]+)', function($type, $node_id){
     if(Kanban::$current == null){
         Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
         return;
     }
+    $type = rtrim($type, "s");
+    if(!in_array($type, array_values(Kanban::$typeList)) && $type != "user"){
+        Flight::ret(StatusCodes::NOT_IMPLEMENTED, "Not Implemented");
+        return;
+    }
 
     $method = Flight::request()->method;
-    Boards::Boards($method, $board_id);
+    Nodes::Nodes($method, $node_id, $type);
 });
 
 Flight::route('/api/dic', function () {

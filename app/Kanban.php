@@ -1,11 +1,9 @@
 <?php
 
-
 namespace App;
 
 use Flight;
 use Throwable;
-use App;
 
 
 class Kanban{
@@ -112,8 +110,7 @@ class Kanban{
 
 
     public static function Kanban(){
-        $result = self::print();
-        Flight::ret(200, "OK", $result);
+        Flight::ret(200, "OK", self::print());
     }
 
 }
