@@ -2,10 +2,10 @@
 
 Please check all APIs in [Wiki](https://github.com/MeoncStudio/Kanban-Server/wiki) section.
 
+## This repository
+This repository is the server-end code for [CloudyYoung/Smart-Kanban-Board](https://github.com/CloudyYoung/Smart-Kanban-Board).   
+It is written in PHP and in object-oriented programming.
 
-## Naming Rules
-- Private: Lower case, First person singlular verb
-- Private static: Lower case, Third person singular verb
-- Public: Lower case, First person singular verb
-- Public static (Open API): Upper case, Singlular noun
-- Public static (Static Method): Lower case, Singular noun
+## Code
+PHP framework used is [Mikecao/Flight](https://github.com/mikecao/flight).  
+All APIs are RESTful, which uses the concept of object in request url.
