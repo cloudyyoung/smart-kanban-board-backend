@@ -46,8 +46,6 @@ Flight::map('sql', function($sql, $fetch_all = false){
 
     if ($res === false) {
         return $res;
-    }else if($res === true){
-        return $res;
     }
 
     $ret = [];
