@@ -93,15 +93,40 @@ class Users
             return false;
         }
     }
+
+    private function security_answer_check($username, $sec_ans){
+        if(empty($username)){
+            return -1;
+        }
+        $ret = Flight::sql("SELECT * FROM `user` WHERE `username`='$username' AND `security_answer`='$sec_ans'   ");
+        if(empty($ret)){
+            return -2;
+        }else{
+            $this->username = $username;
+            return true;
+        }
+    }
+
+    private function reset($password){
+        if(empty($password)){
+            return -1;
+        }
+        $username = $this->username;
+        $ret = Flight::sql("UPDATE `user` SET `password`='$password' WHERE `username`='$username' ");
+        if($ret === false){
+            return -2;
+        }else{
+            return true;
+        }
+    }
     
     public static function Registration(){
-        $user = new Users();
-
         $username = Flight::request()->data['username'];
         $password = Flight::request()->data['password'];
         $sec_ques = Flight::request()->data['security_question'];
         $sec_ans = Flight::request()->data['security_answer'];
 
+        $user = new Users();
         $ret = $user->register($username, $password, $sec_ques, $sec_ans);
         
         if($ret === false){
@@ -116,6 +141,34 @@ class Users
             Flight::ret(StatusCodes::PRECONDITION_FAILED, "Security question and answer has to be correctly filled in");
         }else if($ret == -4){
             Flight::ret(StatusCodes::PRECONDITION_FAILED, "Username is invalid");
+        }
+    }
+
+    public static function ResetPassword(){
+        $sec_ans = Flight::request()->data['security_answer'];
+        $username = Flight::request()->data['username'];
+        $password = Flight::request()->data['new_password'];
+
+        $user = new Users();
+        $ret = $user->security_answer_check($username, $sec_ans);
+        if($ret){
+
+        }else if($ret == -1){
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Lack of params", Array("username", $username));
+            return;
+        }else if($ret == -2){
+            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Security answer not match");
+            return;
+        }
+
+        $ret = $user->reset($password);
+        if($ret){
+            Flight::ret(StatusCodes::NO_CONTENT, "No Content");
+        }else if($ret == -1){
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Lack of params", Array("new_password"));
+        }else if($ret == -2){
+            Flight::ret(StatusCodes::SERVICE_ERROR, "Service error");
+        }else{
         }
     }
 

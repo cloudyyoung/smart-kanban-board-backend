@@ -29,6 +29,9 @@ Flight::route('POST /api/users', function () {
     Users::Registration();
 });
 
+Flight::route('POST /api/users/reset/password', function () {
+    Users::ResetPassword();
+});
 
 
 Flight::route('GET /api/kanban', function () {
