@@ -1,10 +1,12 @@
-name: PHP Lint
+name: PHP Linting
 
 on: [push]
 
 jobs:
-  formatting:
+  phplint:
+
     runs-on: ubuntu-latest
-    steps: 
-      - name: PHP Lint
-        uses: michaelw90/PHP-Lint@1.0.0
+
+    steps:
+        - uses: actions/checkout@v1
+        - uses: michaelw90/PHP-Lint@master
