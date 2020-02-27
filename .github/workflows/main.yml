@@ -1,12 +1,10 @@
-name: CI
+name: PHP Lint
 
 on: [push]
 
 jobs:
-  build:
-
+  formatting:
     runs-on: ubuntu-latest
-
     steps: 
       - name: PHP Lint
         uses: michaelw90/PHP-Lint@1.0.0
