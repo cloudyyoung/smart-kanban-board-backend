@@ -70,7 +70,7 @@ class Nodes{
 
         $this->nodes = [];
         $tableName = $this->getChildrenType();
-        $nodesClass = "App\\" . $this->getChildrenType() . "s";
+        $nodesClass = "App\\" . ucwords($this->getChildrenType()) . "s";
 
         if($tableName === false){
             return;
