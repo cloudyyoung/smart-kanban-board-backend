@@ -321,7 +321,7 @@ abstract class Nodes{
         }else if($ret === -2){
             Flight::ret(StatusCodes::SERVICE_ERROR, "Service Error", null);
         }else{
-            Flight::ret(StatusCodes::OK, "OK", $node->print());
+            Flight::ret(StatusCodes::CREATED, "Created", $node->print());
         }
     }
 
@@ -340,7 +340,7 @@ abstract class Nodes{
             Flight::ret(StatusCodes::SERVICE_ERROR, "Fail to update by database error", Flight::db()->error);
             return;
         }
-        Flight::ret(StatusCodes::OK, "OK", $node->print());
+        Flight::ret(StatusCodes::ACCEPTED, "Accepted", $node->print());
     }
 
     public static function Deletes($data){
