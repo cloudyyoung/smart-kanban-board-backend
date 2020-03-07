@@ -9,80 +9,243 @@ use ReflectionClass;
 use ReflectionProperty;
 
 use App\Kanban;
+use App\Users;
 
-class Nodes{
+abstract class Nodes{
 
-    public $id = 0;
-    protected $parent_id = null;
-    protected $grandparent_id = null;
-    public $title = "";
-    public $note = "";
+    public $id;
+    public $title;
+    public $note;
+    public $parent_id;
     private $nodes = [];
-    private $type = ""; // whether board, column or event
+    private $type = "";
     private $class = "";
+    private $authorized = false;
+    private $existing = false;
+    private static $typeList = Array(
+        0 => "user",
+        1 => "board",
+        2 => "column",
+        3 => "event",
+    );
 
-    function __construct($id, $parent_id, $title = "", $note = ""){
+    function __construct($id){
         $this->id = (int)$id;
         $this->class = get_class($this);
-        $this->type = rtrim(strtolower(explode('\\',$this->class)[1]), "s");
-        $this->parent_id = isset($parent_id) ? (int)$parent_id : null;
-        $this->set($title, $note);
-        $this->setDictionary();
-        $this->fetch();
-    }
-
-    public function set($title, $note){
-        $this->title = $title;
-        $this->note = $note;
-    }
-
-    private function setDictionary(){
-        // Add into category
-        Kanban::$dictionary[$this->type][$this->id] = Kanban::$typeDictionary[$this->type];
-
-        // Add into parent
-        $parent = $this->getParentType();
-        if($parent !== false && isset($this->parent_id)){
-            Kanban::$dictionary[$this->type][$this->id][$parent."_id"] = $this->parent_id;
-            Kanban::$dictionary[$parent][$this->parent_id][$this->type][] = $this->id;
-        }
-
-        $grandparent = $this->getParentType(2);
-        if($grandparent !== false && isset($this->grandparent_id)){
-            Kanban::$dictionary[$this->type][$this->id][$grandparent."_id"] = $this->grandparent_id;
-            Kanban::$dictionary[$grandparent][$this->grandparent_id][$this->type][] = $this->id;
+        $this->type = rtrim(strtolower(explode('\\', $this->class)[1]), "s");
+        if($this->type == "kanban"){
+            $this->type = "user";
         }
     }
 
-    private function getParentType($level = 1){
-        return Kanban::getParentType($this->type, $level);
-    }
-
-    private function getChildrenType($level = 1){
-        return Kanban::getChildrenType($this->type, $level);
-    }
-
-    public function fetch($childOnly = true){
-        if(!$childOnly){
-            $ret = Flight::sql("SELECT `title`, `note` FROM `{$this->type}` WHERE `id` ='{$this->id}'   ", true);
-            $this->set($ret->title, $ret->note);
+    public function build($data){
+        foreach($data as $key => $value){
+            if($key == $this->getParentType() . '_id'){
+                $key = "parent_id";
+            }
+            if(is_numeric($value)){
+                $this->$key = (int) $value;
+            }else if(is_bool($value)){
+                $this->$key = (bool) $value;
+            }else{
+                $this->$key = $value;
+            }
         }
+    }
+
+    public function get(){
+        if($this->id == 0) return -1;
+
+        $this->checkAuthority();
+        if(!$this->authorized){
+            return -1;
+        }
+
+        $ret = Flight::sql("SELECT * FROM `{$this->type}` WHERE `id` ='{$this->id}'   ");
+        $this->build($ret);
 
         $this->nodes = [];
-        $tableName = $this->getChildrenType();
-        $nodesClass = "App\\" . ucwords($this->getChildrenType()) . "s";
+        $children = $this->getChildrenType();
 
-        if($tableName === false){
-            return;
+        if($children !== false){
+            $nodesClass = $this->typeClass($this->getChildrenType());
+            $ret = Flight::sql("SELECT `id` FROM `$children` WHERE `{$this->type}_id` ='{$this->id}'   ", true);
+            if($ret !== false && !empty($ret)){
+                foreach ($ret as $node) {
+                    $node = new $nodesClass($node->id);
+                    $node->get();
+                    $this->nodes[$node->id] = $node;
+                }
+            }
         }
 
-        $ret = Flight::sql("SELECT * FROM `$tableName` WHERE `{$this->type}_id` ='{$this->id}'   ", true);
-        foreach ($ret as $node) {
-            $this->nodes[$node->id] = new $nodesClass($node->id, $this->id, $node->title, $node->note, $this->parent_id);
+        foreach($this->nodes as $key => $value){
+            if(!$value->existing || !$value->authorized){
+                unset($this->nodes->$key);
+            }
+        }
+
+        return true;
+    }
+
+    public function create(){
+        $parent_type = self::getParentTypeStatic($this->type);
+
+        if($parent_type != "user"){
+            $parent_type_class = self::typeClass($parent_type);
+            $parent_node = new $parent_type_class($this->parent_id);
+            $parent_node->get();
+            if($parent_node->authorized == false){
+                return -1;
+            }
+        }else{
+            if(Users::$current == null){
+                return -1;
+            }
+        }
+
+        $reflection = new ReflectionClass($this);
+        $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
+        $fields = [];
+        $values = [];
+        foreach($properties as $property){
+            $key = $property->name;
+            $values[] = "'{$this->$key}'";
+            if($key == "parent_id"){
+                $key = $this->getParentType() . "_id";
+            }
+            $fields[] = "`$key`";
+        }
+
+        $sql = "INSERT INTO `{$this->type}` (" . implode(", ", $fields) . ") VALUES ( " . implode(", ", $values) . ")  ";
+        $ret = Flight::sql($sql);
+        if ($ret === false && Flight::db()->error != "") {
+            return -2;
+        }else{
+            $this->id = Flight::db()->insert_id;
+            $this->get();
         }
     }
 
-    public function getChild($id = null){
+    public function update(){
+        $reflection = new ReflectionClass($this);
+        $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
+        $values = [];
+        foreach($properties as $property){
+            $key = $property->name;
+            $key_alias = $key;
+            if($key == "parent_id"){
+                $key_alias = $this->getParentType() . "_id";
+            }else if($key == "id"){
+                continue;
+            }
+            $values[] = "`$key_alias` = '{$this->$key}'";
+        }
+        $sql = "UPDATE `{$this->type}` SET " . implode(", ", $values) . " WHERE `id`='{$this->id}' ";
+        $ret = Flight::sql($sql);
+        if ($ret === false && Flight::db()->error != "") {
+            return -2;
+        }else{
+            $this->get();
+        }
+    }
+
+    public function delete(){
+        // DELETE `board`,`column`,`event` from `board` LEFT JOIN `column` ON `column`.`board_id`=`board`.`id` LEFT JOIN `event` ON `event`.`column_id`=`column`.`id` WHERE `board`.`id`=38
+        $child = $this->type;
+        $grandchild = $this->type;
+
+        $tables = ["`$grandchild`"];
+        $sql = "";
+        while($this->getChildrenType($grandchild) !== false){
+            $child = $grandchild;
+            $grandchild = $this->getChildrenType($grandchild);
+            $tables[] = "`$grandchild`";
+            $sql .= "LEFT JOIN `$grandchild` ON `$grandchild`.`{$child}_id` = `$child`.`id` ";
+        }
+        $sql = "DELETE " . implode(", ", $tables) . " FROM `{$this->type}` " . $sql . " WHERE `{$this->type}`.`id` = {$this->id} ";
+        $ret = Flight::sql($sql);
+        if ($ret === false && Flight::db()->error != "") {
+            return -2;
+        }else{
+            $this->get();
+        }
+    }
+
+    private function checkAuthority(){
+        $parent = $this->type;
+        $grandparent = $this->type;
+        $sql = "SELECT `user`.`id` FROM `$parent` ";
+        while($this->getParentType($grandparent) !== false){
+            $parent = $grandparent;
+            $grandparent = $this->getParentType($grandparent);
+            $sql .= "INNER JOIN `$grandparent` ON `$grandparent`.`id` = `$parent`.`{$grandparent}_id` ";
+        }
+        $sql .= "WHERE `$this->type`.`id` = {$this->id} ";
+        // SELECT * FROM `event` INNER JOIN `column` ON `column`.`id`=`event`.`column_id` INNER JOIN `board` ON `board`.`id` = `column`.`board_id` INNER JOIN `user` ON `user`.`id` = `board`.`user_id` WHERE `event`.`id`=1 AND `user`.`id`=1
+        $ret = Flight::sql($sql);
+        if($ret !== false && !empty($ret) && $ret->id == Users::$current->id){
+            $this->authorized = true;
+            $this->existing = true;
+        }else if($ret !== false && !empty($ret)){
+            $this->authorized = false;
+            $this->existing = true;
+        }else{
+            $this->authorized = false;
+            $this->existing = false;
+        }
+    }
+
+    private function getParentType($type = null, $level = 1){
+        if($type == null){
+            $type = $this->type;
+        }
+        return self::getParentTypeStatic($type, $level);
+    }
+
+    private function getChildrenType($type = null, $level = 1){
+        if($type == null){
+            $type = $this->type;
+        }
+        return self::getChildrenTypeStatic($type, $level);
+    }
+    
+    private static function getParentTypeStatic($type, $level = 1){
+        $value = array_flip(self::$typeList)[$type];
+        return (array_key_exists($value - $level, self::$typeList)) ? self::$typeList[$value - $level] : false;
+    }
+
+    private static function getChildrenTypeStatic($type, $level = 1){
+        $value = array_flip(self::$typeList)[$type];
+        return (array_key_exists($value + $level, self::$typeList)) ? self::$typeList[$value + $level] : false;
+    }
+
+
+    private static function typeClass($type) {
+        return "App\\" . self::typeProper(self::typePlural($type));
+    }
+
+    private static function typePlural($type) {
+        return strlen($type) <= 0 ? $type : rtrim($type, "s") . "s";
+    }
+
+    private static function typeSingular($type) {
+        return strlen($type) > 0 ? rtrim($type, "s") : $type;
+    }
+
+    private static function typeProper($type) {
+        return ucwords($type);
+    }
+
+    private static function typeLower($type) {
+        return strtolower($type);
+    }
+
+    private static function typeUpper($type) {
+        return strtoupper($type);
+    }
+
+    private function getChild($id = null){
         if(array_key_exists($id, $this->nodes)){
             return $this->nodes[$id];
         }else if(!isset($id)){
@@ -92,22 +255,32 @@ class Nodes{
         }
     }
 
-    public function print($node_id = null){
-        if(isset($node_id)){
-            if (array_key_exists($node_id, $this->nodes)) {
-                return $this->nodes[$node_id]->print();
-            } else {
-                return false;
-            }
+    public function print(){
+        if(!$this->existing || !$this->authorized){
+            return null;
         }
-        
+
         $reflection = new ReflectionClass($this);
         $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
 
         $arr = [];
         foreach($properties as $property){
-            $key = $property->name;
-            $arr[$key] = $this->$key;
+            if(!$property->isStatic()){
+                $key = $property->name;
+                $key_alias = $key;
+                if($this->type == "user" && $key != "id"){
+                    continue;
+                }
+                if($key == "parent_id"){
+                    $key_alias = $this->getParentType() . "_id";
+                }
+                $arr[$key_alias] = $this->$key;
+            }
+        }
+        if($this->type == "user"){
+            $arr['type'] = self::typeProper("kanban");
+        }else{
+            $arr['type'] = self::typeProper($this->type);
         }
 
         $nodesType = $this->getChildrenType();
@@ -115,120 +288,124 @@ class Nodes{
             $nodesType .= "s";
             $arr[$nodesType] = [];
             foreach ($this->nodes as $node) {
-                $arr[$nodesType][] = $node->print();
+                if($node->print() != null){
+                    $arr[$nodesType][] = $node->print();
+                }
             }
         }
         
         return $arr;
     }
 
-    private static function Get($data){
-        $node = Kanban::find($data->type, $data->node_id);
-        if($node === false){
-            return [StatusCodes::NOT_FOUND, "Target Not Found", null];
+    public static function Gets($data){
+        $node = self::MakeInstance($data->node_id, $data->type);
+        $ret = $node->get();
+        $typeUpper = self::typeProper($data->type);
+        if($ret === -1){
+            Flight::ret(StatusCodes::NOT_FOUND, "$typeUpper Not Found", null);
+            return;
         }
-        return [StatusCodes::OK, "OK", $node->print()];
+        Flight::ret(StatusCodes::OK, "OK", $node->print());
     }
 
-    private static function Create($data){
-        $parent_type = Kanban::getParentType($data->type);
-        $parent_node = Kanban::find(Kanban::getParentType($data->type), $data->parent_id);
-        if($parent_node === false && $parent_type != "user"){
-            return [StatusCodes::NOT_FOUND, "Target Parent " . $parent_type . " Not Found", null];
-        }
+    public static function Creates($data){
+        $parent_type = self::getParentTypeStatic($data->type);
+        $parent_typeUpper = self::typeProper($parent_type);
+        $typeClass = self::typeClass($data->type);
 
-        $parent_name = Kanban::getParentType($data->type) . "_id";
-        $parent_id = $data->$parent_name;
-        $ret = Flight::sql("INSERT INTO `{$data->type}` (`{$parent_name}`, `title`, `note`) VALUES ({$parent_id}, '{$data->title}', '{$data->note}')  ");
-        if ($ret === false && Flight::db()->error != "") {
-            return [StatusCodes::SERVICE_ERROR, "Fail to create by database error", Flight::db()->error];
+        $node = self::MakeInstance($data->node_id, $data->type);
+        $node->build($data);
+        $ret = $node->create();
+        if($ret === -1){
+            Flight::ret(StatusCodes::NOT_FOUND, $parent_typeUpper . " Not Found", null);
+        }else if($ret === -2){
+            Flight::ret(StatusCodes::SERVICE_ERROR, "Service Error", null);
+        }else{
+            Flight::ret(StatusCodes::OK, "OK", $node->print());
         }
-
-        return [StatusCodes::OK, "OK", null];
     }
 
-    private static function Update($data){
-        $node = Kanban::find($data->type, $data->node_id);
-        if($node === false){
-            return [StatusCodes::NOT_FOUND, "Target " . $data->type . " Not Found", null];
+    public static function Updates($data){
+        $node = self::MakeInstance($data->node_id, $data->type);
+        $ret = $node->get();
+        $typeUpper = self::typeProper($node->type);
+        if($ret === -1){
+            Flight::ret(StatusCodes::NOT_FOUND, "$typeUpper Not Found", null);
+            return;
         }
 
-        $vars = [];
-        if ($data->title != null) {
-            $vars[] =  "`title`='{$data->title}'";
+        $node->build($data);
+        $ret = $node->update();
+        if($ret === -2){
+            Flight::ret(StatusCodes::SERVICE_ERROR, "Fail to update by database error", Flight::db()->error);
+            return;
         }
-        if ($data->note != null) {
-            $vars[] =  "`note`='{$data->note}'";
-        }
-        $sql = "UPDATE `{$data->type}` SET " . implode(", ", $vars) . " WHERE `id`={$data->node_id}   ";
-        $ret = Flight::sql($sql);
-        if ($ret === false && Flight::db()->error != "") {
-            return [StatusCodes::SERVICE_ERROR, "Fail to update by database error", Flight::db()->error];
-        }
-
-        return [StatusCodes::OK, "OK", null];
+        Flight::ret(StatusCodes::OK, "OK", $node->print());
     }
 
-    private static function Delete($data){
-        $node = Kanban::find($data->type, $data->node_id);
-        if($node === false){
-            return [StatusCodes::NOT_FOUND, "Target " . $data->type . " Not Found", null];
+    public static function Deletes($data){
+        $node = self::MakeInstance($data->node_id, $data->type);
+        $ret = $node->get();
+        $typeUpper = self::typeProper($node->type);
+        if($ret === -1){
+            Flight::ret(StatusCodes::NOT_FOUND, "$typeUpper Not Found", null);
+            return;
         }
 
-        $child = Kanban::getChildrenType($data->type);
-        $grandchild = Kanban::getChildrenType($data->type, 2);
-        $children_id = [];
-        $grandchildren_id = [];
-        if($child !== false){
-            $children_id = Kanban::$dictionary[$data->type][$data->node_id][$child];
+        $ret = $node->delete();
+        if($ret == -2){
+            Flight::ret(StatusCodes::SERVICE_ERROR, "Fail to update by database error", Flight::db()->error);
+            return;
         }
-        if($grandchild !== false){
-            $grandchildren_id = Kanban::$dictionary[$data->type][$data->node_id][$grandchild];
-        }
-
-        $sql = "DELETE FROM `board` WHERE `id`={$data->node_id}; ";
-        foreach($children_id as $each_id){
-            $sql .= "DELETE FROM `{$child}` WHERE `id`={$each_id}; ";
-        }
-        foreach($grandchildren_id as $each_id){
-            $sql .= "DELETE FROM `{$grandchild}` WHERE `id`={$each_id}; ";
-        }
-
-        $ret = Flight::sql($sql, true);
-        if ($ret === false && Flight::db()->error != "") {
-            return [StatusCodes::SERVICE_ERROR, "Fail to delete by database error", Flight::db()->error];
-        }
-
-        return [StatusCodes::NO_CONTENT, null, null];
+        Flight::ret(StatusCodes::NO_CONTENT, "No Content");
     }
 
     
-    public static function Nodes($method, $node_id, $type)
+    private static function MakeInstance($id, $type){
+        $type = self::typeClass($type);
+        $node = new $type($id);
+        return $node;
+    }
+
+    public static function Nodes($node_id, $type)
     {
+
+        if(Users::$current == null){
+            Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
+            return;
+        }
+    
+        $type = rtrim($type, "s");
+        if(!in_array($type, array_values(self::$typeList)) && $type != "user"){
+            Flight::ret(StatusCodes::NOT_IMPLEMENTED, "Not Implemented");
+            return;
+        }
+
         $func = null;
         $args = array();
+        $method = Flight::request()->method;
 
         switch ($method) {
             case "GET":
-                $func = "Get";
+                $func = "Gets";
                 $args = ["node_id"];
             break;
             case "POST":
-                $func = "Create";
-                $args = ["title", Kanban::getParentType($type) . "_id"];
+                $func = "Creates";
+                $args = ["title", self::getParentTypeStatic($type) . "_id"];
             break;
             case "PATCH":
-                $func = "Update";
+                $func = "Updates";
                 $args = ["node_id"];
             break;
             case "DELETE":
-                $func = "Delete";
+                $func = "Deletes";
                 $args = ["node_id"];
             break;
         }
 
         if($func == null){
-            Flight::ret(StatusCodes::NOT_IMPLEMENTED, "Not Implemented");
+            Flight::ret(StatusCodes::METHOD_NOT_ALLOWED, "Method Not Allowed");
             return;
         }
 
@@ -236,7 +413,7 @@ class Nodes{
         $data = Flight::request()->data;
         $data->node_id = $node_id;
         $data->type = $type;
-        $data->user_id = Kanban::$current->id;
+        $data->user_id = Users::$current->id;
         
         foreach ($args as $key => $param) {
             if (!isset($data->$param)) {
@@ -250,13 +427,11 @@ class Nodes{
         }
 
         if (!empty($miss)) {
-            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Missing Params", array("missing" => $miss));
+            Flight::ret(StatusCodes::RETRY_WITH, "Missing Parameters", array("missing" => $miss));
             return;
         }
 
-        list($code, $message, $array) = self::$func($data);
-        Flight::ret($code, $message, $array);
-        
+        self::$func($data);
     }
 
 }
