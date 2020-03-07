@@ -10,7 +10,7 @@ use ReflectionProperty;
 
 use App\Kanban;
 
-class Nodes{
+abstract class Nodes{
 
     public $id = 0;
     protected $parent_id = null;
@@ -20,6 +20,12 @@ class Nodes{
     private $nodes = [];
     private $type = ""; // whether board, column or event
     private $class = "";
+    public static $typeList = Array(
+        0 => "user",
+        1 => "board",
+        2 => "column",
+        3 => "event",
+    );
 
     function __construct($id, $parent_id, $title = "", $note = ""){
         $this->id = (int)$id;
@@ -54,13 +60,22 @@ class Nodes{
         }
     }
 
-    private function getParentType($level = 1){
-        return Kanban::getParentType($this->type, $level);
+    private function getParentType($type = null, $level = 1){
+        if($type == null){
+            $type = $this->type;
+        }
+        $value = array_flip(Nodes::$typeList)[$type];
+        return (array_key_exists($value - $level, Nodes::$typeList)) ? Nodes::$typeList[$value - $level] : false;
     }
 
-    private function getChildrenType($level = 1){
-        return Kanban::getChildrenType($this->type, $level);
+    private function getChildrenType($type = null, $level = 1){
+        if($type == null){
+            $type = $this->type;
+        }
+        $value = array_flip(Nodes::$typeList)[$type];
+        return (array_key_exists($value + $level, Nodes::$typeList)) ? Nodes::$typeList[$value + $level] : false;
     }
+
 
     public function fetch($childOnly = true){
         if(!$childOnly){
@@ -122,35 +137,39 @@ class Nodes{
         return $arr;
     }
 
-    private static function Get($data){
+    public static function Get($data){
         $node = Kanban::find($data->type, $data->node_id);
         if($node === false){
-            return [StatusCodes::NOT_FOUND, "Node Not Found", null];
+            Flight::ret(StatusCodes::NOT_FOUND, "Node Not Found", null);
+            return;
         }
-        return [StatusCodes::OK, "OK", $node->print()];
+        Flight::ret(StatusCodes::OK, "OK", $node->print());
     }
 
-    private static function Create($data){
-        $parent_type = Kanban::getParentType($data->type);
-        $parent_node = Kanban::find(Kanban::getParentType($data->type), $data->parent_id);
+    public static function Create($data){
+        $parent_type = Nodes::getParentType($data->type);
+        $parent_node = Kanban::find(Nodes::getParentType($data->type), $data->parent_id);
         if($parent_node === false && $parent_type != "user"){
-            return [StatusCodes::NOT_FOUND, "Node Parent " . $parent_type . " Not Found", null];
+            Flight::ret(StatusCodes::NOT_FOUND, "Node Parent " . $parent_type . " Not Found", null);
+            return;
         }
 
-        $parent_name = Kanban::getParentType($data->type) . "_id";
+        $parent_name = Nodes::getParentType($data->type) . "_id";
         $parent_id = $data->$parent_name;
         $ret = Flight::sql("INSERT INTO `{$data->type}` (`{$parent_name}`, `title`, `note`) VALUES ({$parent_id}, '{$data->title}', '{$data->note}')  ");
         if ($ret === false && Flight::db()->error != "") {
-            return [StatusCodes::SERVICE_ERROR, "Fail to create by database error", Flight::db()->error];
+            Flight::ret(StatusCodes::SERVICE_ERROR, "Fail to create by database error", Flight::db()->error);
+            return;
         }
 
-        return [StatusCodes::OK, "OK", null];
+        Flight::ret(StatusCodes::OK, "OK", null);
     }
 
-    private static function Update($data){
+    public static function Update($data){
         $node = Kanban::find($data->type, $data->node_id);
         if($node === false){
-            return [StatusCodes::NOT_FOUND, "Node " . $data->type . " Not Found", null];
+            Flight::ret(StatusCodes::NOT_FOUND, "Node " . $data->type . " Not Found", null);
+            return;
         }
 
         $list = ["title", "note"];
@@ -162,26 +181,28 @@ class Nodes{
         }
 
         if(empty($vars)){
-            return [StatusCodes::NOT_MODIFIED, "Not Modified", null];
+            Flight::ret(StatusCodes::NOT_MODIFIED, "Not Modified", null);
         }
 
         $sql = "UPDATE `{$data->type}` SET " . implode(", ", $vars) . " WHERE `id`={$data->node_id}   ";
         $ret = Flight::sql($sql);
         if ($ret === false && Flight::db()->error != "") {
-            return [StatusCodes::SERVICE_ERROR, "Fail to update by database error", Flight::db()->error];
+            Flight::ret(StatusCodes::SERVICE_ERROR, "Fail to update by database error", Flight::db()->error);
+            return;
         }
 
-        return [StatusCodes::OK, "OK", null];
+        Flight::ret(StatusCodes::OK, "OK", null);
     }
 
-    private static function Delete($data){
+    public static function Delete($data){
         $node = Kanban::find($data->type, $data->node_id);
         if($node === false){
-            return [StatusCodes::NOT_FOUND, "Node " . $data->type . " Not Found", null];
+            Flight::ret(StatusCodes::NOT_FOUND, "Node " . $data->type . " Not Found", null);
+            return;
         }
 
-        $child = Kanban::getChildrenType($data->type);
-        $grandchild = Kanban::getChildrenType($data->type, 2);
+        $child = Nodes::getChildrenType($data->type);
+        $grandchild = Nodes::getChildrenType($data->type, 2);
         $children_id = [];
         $grandchildren_id = [];
         if($child !== false){
@@ -201,10 +222,11 @@ class Nodes{
 
         $ret = Flight::sql($sql, true);
         if ($ret === false && Flight::db()->error != "") {
-            return [StatusCodes::SERVICE_ERROR, "Fail to delete by database error", Flight::db()->error];
+            Flight::ret(StatusCodes::SERVICE_ERROR, "Fail to delete by database error", Flight::db()->error);
+            return;
         }
 
-        return [StatusCodes::NO_CONTENT, null, null];
+        Flight::ret(StatusCodes::NO_CONTENT, null, null);
     }
 
     
@@ -217,7 +239,7 @@ class Nodes{
         }
     
         $type = rtrim($type, "s");
-        if(!in_array($type, array_values(Kanban::$typeList)) && $type != "user"){
+        if(!in_array($type, array_values(Nodes::$typeList)) && $type != "user"){
             Flight::ret(StatusCodes::NOT_IMPLEMENTED, "Not Implemented");
             return;
         }
@@ -233,7 +255,7 @@ class Nodes{
             break;
             case "POST":
                 $func = "Create";
-                $args = ["title", Kanban::getParentType($type) . "_id"];
+                $args = ["title", Nodes::getParentType($type) . "_id"];
             break;
             case "PATCH":
                 $func = "Update";
@@ -268,13 +290,11 @@ class Nodes{
         }
 
         if (!empty($miss)) {
-            Flight::ret(StatusCodes::RETRY_WITH, "Missing Param", array("missing" => $miss));
+            Flight::ret(StatusCodes::RETRY_WITH, "Missing Parameters", array("missing" => $miss));
             return;
         }
 
-        list($code, $message, $array) = self::$func($data);
-        Flight::ret($code, $message, $array);
-        
+        self::$func($data);
     }
 
 }

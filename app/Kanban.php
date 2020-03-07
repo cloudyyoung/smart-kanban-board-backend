@@ -11,12 +11,6 @@ class Kanban{
     public static $current = null;
     public static $nodes = null; // for current user
     public static $dictionary = null;
-    public static $typeList = Array(
-        0 => "user",
-        1 => "board",
-        2 => "column",
-        3 => "event",
-    );
     public static $typeDictionary = Array(
         "board" => Array(
             "column" => [],
@@ -95,16 +89,6 @@ class Kanban{
         }else{
             return false;
         }
-    }
-
-    public static function getParentType($type, $level = 1){
-        $value = array_flip(Kanban::$typeList)[$type];
-        return (array_key_exists($value - $level, Kanban::$typeList)) ? Kanban::$typeList[$value - $level] : false;
-    }
-
-    public static function getChildrenType($type, $level = 1){
-        $value = array_flip(Kanban::$typeList)[$type];
-        return (array_key_exists($value + $level, Kanban::$typeList)) ? Kanban::$typeList[$value + $level] : false;
     }
 
 
