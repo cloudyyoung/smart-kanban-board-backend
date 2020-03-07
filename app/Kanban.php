@@ -110,6 +110,15 @@ class Kanban{
 
 
     public static function Kanban(){
+        if(Kanban::$current == null){
+            Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthenticated Access");
+            return;
+        }
+        $method = Flight::request()->method;
+        if($method != "GET"){
+            Flight::ret(StatusCodes::METHOD_NOT_ALLOWED, "Method Not Allowed");
+            return;
+        }
         Flight::ret(200, "OK", self::print());
     }
 

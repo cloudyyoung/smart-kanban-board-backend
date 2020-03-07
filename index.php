@@ -34,28 +34,12 @@ Flight::route('POST /api/users/reset/password', function () {
 });
 
 
-Flight::route('GET /api/kanban', function () {
-    if(Kanban::$current == null){
-        Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthenticated Access");
-        return;
-    }
-
+Flight::route('/api/kanban', function () {
     Kanban::Kanban();
 });
 
-Flight::route('GET|POST|PATCH|DELETE /api/@type(/@node_id:[0-9]+)', function($type, $node_id){
-    if(Kanban::$current == null){
-        Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
-        return;
-    }
-    $type = rtrim($type, "s");
-    if(!in_array($type, array_values(Kanban::$typeList)) && $type != "user"){
-        Flight::ret(StatusCodes::NOT_IMPLEMENTED, "Not Implemented");
-        return;
-    }
-
-    $method = Flight::request()->method;
-    Nodes::Nodes($method, $node_id, $type);
+Flight::route('/api/@type(/@node_id:[0-9]+)', function($type, $node_id){
+    Nodes::Nodes($node_id, $type);
 });
 
 Flight::route('/api/dic', function () {

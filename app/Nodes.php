@@ -125,7 +125,7 @@ class Nodes{
     private static function Get($data){
         $node = Kanban::find($data->type, $data->node_id);
         if($node === false){
-            return [StatusCodes::NOT_FOUND, "Target Not Found", null];
+            return [StatusCodes::NOT_FOUND, "Node Not Found", null];
         }
         return [StatusCodes::OK, "OK", $node->print()];
     }
@@ -134,7 +134,7 @@ class Nodes{
         $parent_type = Kanban::getParentType($data->type);
         $parent_node = Kanban::find(Kanban::getParentType($data->type), $data->parent_id);
         if($parent_node === false && $parent_type != "user"){
-            return [StatusCodes::NOT_FOUND, "Target Parent " . $parent_type . " Not Found", null];
+            return [StatusCodes::NOT_FOUND, "Node Parent " . $parent_type . " Not Found", null];
         }
 
         $parent_name = Kanban::getParentType($data->type) . "_id";
@@ -150,16 +150,21 @@ class Nodes{
     private static function Update($data){
         $node = Kanban::find($data->type, $data->node_id);
         if($node === false){
-            return [StatusCodes::NOT_FOUND, "Target " . $data->type . " Not Found", null];
+            return [StatusCodes::NOT_FOUND, "Node " . $data->type . " Not Found", null];
         }
 
+        $list = ["title", "note"];
         $vars = [];
-        if ($data->title != null) {
-            $vars[] =  "`title`='{$data->title}'";
+        foreach($list as $each){
+            if($data->$each != null && $data->$each != $node->each){
+                $vars[] = "`title`='{$data->$each}'";
+            }
         }
-        if ($data->note != null) {
-            $vars[] =  "`note`='{$data->note}'";
+
+        if(empty($vars)){
+            return [StatusCodes::NOT_MODIFIED, "Not Modified", null];
         }
+
         $sql = "UPDATE `{$data->type}` SET " . implode(", ", $vars) . " WHERE `id`={$data->node_id}   ";
         $ret = Flight::sql($sql);
         if ($ret === false && Flight::db()->error != "") {
@@ -172,7 +177,7 @@ class Nodes{
     private static function Delete($data){
         $node = Kanban::find($data->type, $data->node_id);
         if($node === false){
-            return [StatusCodes::NOT_FOUND, "Target " . $data->type . " Not Found", null];
+            return [StatusCodes::NOT_FOUND, "Node " . $data->type . " Not Found", null];
         }
 
         $child = Kanban::getChildrenType($data->type);
@@ -203,10 +208,23 @@ class Nodes{
     }
 
     
-    public static function Nodes($method, $node_id, $type)
+    public static function Nodes($node_id, $type)
     {
+
+        if(Kanban::$current == null){
+            Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
+            return;
+        }
+    
+        $type = rtrim($type, "s");
+        if(!in_array($type, array_values(Kanban::$typeList)) && $type != "user"){
+            Flight::ret(StatusCodes::NOT_IMPLEMENTED, "Not Implemented");
+            return;
+        }
+
         $func = null;
         $args = array();
+        $method = Flight::request()->method;
 
         switch ($method) {
             case "GET":
@@ -228,7 +246,7 @@ class Nodes{
         }
 
         if($func == null){
-            Flight::ret(StatusCodes::NOT_IMPLEMENTED, "Not Implemented");
+            Flight::ret(StatusCodes::METHOD_NOT_ALLOWED, "Method Not Allowed");
             return;
         }
 
@@ -250,7 +268,7 @@ class Nodes{
         }
 
         if (!empty($miss)) {
-            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Missing Params", array("missing" => $miss));
+            Flight::ret(StatusCodes::RETRY_WITH, "Missing Param", array("missing" => $miss));
             return;
         }
 
