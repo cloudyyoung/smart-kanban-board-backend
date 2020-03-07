@@ -12,8 +12,7 @@ use App\StatusCodes;
 
 
 if (isset($_SESSION['user'])) {
-    Users::$current = Kanban::$current = unserialize($_SESSION['user']);
-    Kanban::fetch();
+    Users::$current = unserialize($_SESSION['user']);
 }
 
 Flight::route('PUT /api/users/authentication', function () {
@@ -40,10 +39,6 @@ Flight::route('/api/kanban', function () {
 
 Flight::route('/api/@type(/@node_id:[0-9]+)', function($type, $node_id){
     Nodes::Nodes($node_id, $type);
-});
-
-Flight::route('/api/dic', function () {
-    Flight::ret(StatusCodes::OK, "OK", Kanban::$dictionary);
 });
 
 

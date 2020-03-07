@@ -33,7 +33,7 @@ class Users
         if (!empty($ret)) {
             $this->existing = true;
             $this->username = $ret->username;
-            $this->id = $ret->id;
+            $this->id = (int) $ret->id;
         }
 
         if (self::$current != null && (self::$current->id == $this->id || self::$current->username == $this->username)) {
@@ -60,7 +60,13 @@ class Users
 
         $this->existing = true;
         foreach ($ret as $key => $value) {
-            $this->$key = $value;
+            if(is_numeric($value)){
+                $this->$key = (int) $value;
+            }else if(is_bool($value)){
+                $this->$key = (boolean) $value;
+            }else{
+                $this->$key = $value;
+            }
         }
 
         $this->authenticated = true;
