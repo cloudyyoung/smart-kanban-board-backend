@@ -8,6 +8,8 @@ class StatusCodes {
     // [Informational 1xx]
     const CONTINUE                        = 100;
     const SWITCHING_PROTOCOLS             = 101;
+    const PROCESSING                      = 102;
+    const EARLY_HINTS                     = 103;
 
     // [Successful 2xx]
     const OK                              = 200;
@@ -17,6 +19,9 @@ class StatusCodes {
     const NO_CONTENT                      = 204;
     const RESET_CONTENT                   = 205;
     const PARTIAL_CONTENT                 = 206;
+    const MULTI_STATUS                    = 207;
+    const ALREADY_REPORTED                = 208;
+    const IM_USED                         = 226;
 
     // [Redirection 3xx]
     const MULTIPLE_CHOICES                = 300;
@@ -27,6 +32,7 @@ class StatusCodes {
     const USE_PROXY                       = 305;
     const UNUSED                          = 306;
     const TEMPORARY_REDIRECT              = 307;
+    const PERMANENT_REDIRECT              = 308;
 
     // [Client Error 4xx]
     const errorCodesBeginAt               = 400;
@@ -48,6 +54,19 @@ class StatusCodes {
     const UNSUPPORTED_MEDIA_TYPE          = 415;
     const REQUESTED_RANGE_NOT_SATISFIABLE = 416;
     const EXPECTATION_FAILED              = 417;
+    const IM_A_TEA_POT                    = 418;
+    const MISDIRECT_REQUEST               = 421;
+    const UNPROCESSABLE_ENTITY            = 422;
+    const LOCKED                          = 423;
+    const FAILED_DEPENDENCY               = 424;
+    const TOO_EARLY                       = 425;
+    const UPGRADE_REQUIRED                = 426;
+    const PRECONDITION_REQUIRED           = 428;
+    const TOO_MANY_REQUESTS               = 429;
+    const REQUEST_HEADER_FIELDS_TOO_LARGE = 431;
+    const LOGIN_TIME_OUT                  = 440;
+    const RETRY_WITH                      = 449;
+    const UNAVAILABLE_FOR_LEGAL_REASONS   = 451;
 
     // [Server Error 5xx]
     const INTERNAL_SERVER_ERROR           = 500;
@@ -56,12 +75,19 @@ class StatusCodes {
     const SERVICE_UNAVAILABLE             = 503;
     const GATEWAY_TIMEOUT                 = 504;
     const VERSION_NOT_SUPPORTED           = 505;
+    const VARIANT_ALSO_NEGOTIA            = 506;
+    const INSUFFICIENT_STORAGE            = 507;
+    const LOOP_DETECTED                   = 508;
+    const NOT_EXTENDED                    = 510;
+    const NETWORK_AUTHENTICATION_REQUIRED = 511;
     const SERVICE_ERROR                   = 540;
 
     private static $messages = array(
         // [Informational 1xx]
         100 => '100 Continue',
         101 => '101 Switching Protocols',
+        102 => '102 Processing',
+        103 => '103 Early Hints',
 
         // [Successful 2xx]
         200 => '200 OK',
@@ -71,6 +97,9 @@ class StatusCodes {
         204 => '204 No Content',
         205 => '205 Reset Content',
         206 => '206 Partial Content',
+        207 => '207 Multi-Status',
+        208 => '208 Alreadt Reported',
+        226 => '226 IM Used',
 
         // [Redirection 3xx]
         300 => '300 Multiple Choices',
@@ -81,6 +110,7 @@ class StatusCodes {
         305 => '305 Use Proxy',
         306 => '306 (Unused)',
         307 => '307 Temporary Redirect',
+        308 => '308 Permanent Redirect',
 
         // [Client Error 4xx]
         400 => '400 Bad Request',
@@ -101,6 +131,19 @@ class StatusCodes {
         415 => '415 Unsupported Media Type',
         416 => '416 Requested Range Not Satisfiable',
         417 => '417 Expectation Failed',
+        418 => '418 I\'m a teapot',
+        421 => '421 Misdirected Request',
+        422 => '422 Unprocessable Entity',
+        423 => '423 Locked',
+        424 => '424 Failed Dependency',
+        425 => '425 Too Early',
+        426 => '426 Upgrade Required',
+        428 => '428 Precondiion Required',
+        429 => '429 Too Many Requests',
+        431 => '431 Request Header Fields Too Large',
+        440 => "440 Login Time-Out",                   // UNOFFICIAL: Microsoft Internet Information Services 
+        449 => "449 Retry With",                       // UNOFFICIAL: Microsoft Internet Information Services 
+        451 => '451 Unavailable For Legal Reasons',
 
         // [Server Error 5xx]
         500 => '500 Internal Server Error',
@@ -109,6 +152,11 @@ class StatusCodes {
         503 => '503 Service Unavailable',
         504 => '504 Gateway Timeout',
         505 => '505 HTTP Version Not Supported',
+        506 => '506 Variant Also Negotiates',
+        507 => '507 Insufficient Storage',
+        508 => '508 Loop Deteced',
+        510 => '510 Not Extended',
+        511 => '511 Network Authentication Required',
         540 => '540 Service Error'
     );
 
