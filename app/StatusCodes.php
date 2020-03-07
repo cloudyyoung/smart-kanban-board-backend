@@ -154,7 +154,7 @@ class StatusCodes {
         505 => '505 HTTP Version Not Supported',
         506 => '506 Variant Also Negotiates',
         507 => '507 Insufficient Storage',
-        508 => '508 Loop Deteced',
+        508 => '508 Loop Detected',
         510 => '510 Not Extended',
         511 => '511 Network Authentication Required',
         540 => '540 Service Error'
