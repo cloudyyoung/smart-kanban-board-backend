@@ -75,7 +75,7 @@ class StatusCodes {
     const SERVICE_UNAVAILABLE             = 503;
     const GATEWAY_TIMEOUT                 = 504;
     const VERSION_NOT_SUPPORTED           = 505;
-    const VARIANT_ALSO_NEGOTIA            = 506;
+    const VARIANT_ALSO_NEGOTIAS           = 506;
     const INSUFFICIENT_STORAGE            = 507;
     const LOOP_DETECTED                   = 508;
     const NOT_EXTENDED                    = 510;
