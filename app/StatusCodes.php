@@ -55,7 +55,7 @@ class StatusCodes {
     const REQUESTED_RANGE_NOT_SATISFIABLE = 416;
     const EXPECTATION_FAILED              = 417;
     const IM_A_TEA_POT                    = 418;
-    const MISDIRECT_REQUEST               = 421;
+    const MISDIRECTED_REQUEST             = 421;
     const UNPROCESSABLE_ENTITY            = 422;
     const LOCKED                          = 423;
     const FAILED_DEPENDENCY               = 424;
@@ -98,7 +98,7 @@ class StatusCodes {
         205 => '205 Reset Content',
         206 => '206 Partial Content',
         207 => '207 Multi-Status',
-        208 => '208 Alreadt Reported',
+        208 => '208 Already Reported',
         226 => '226 IM Used',
 
         // [Redirection 3xx]
@@ -138,7 +138,7 @@ class StatusCodes {
         424 => '424 Failed Dependency',
         425 => '425 Too Early',
         426 => '426 Upgrade Required',
-        428 => '428 Precondiion Required',
+        428 => '428 Precondition Required',
         429 => '429 Too Many Requests',
         431 => '431 Request Header Fields Too Large',
         440 => "440 Login Time-Out",                   // UNOFFICIAL: Microsoft Internet Information Services 
