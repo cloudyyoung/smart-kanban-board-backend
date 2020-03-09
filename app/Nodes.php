@@ -285,7 +285,7 @@ abstract class Nodes{
 
         $nodesType = $this->getChildrenType();
         if($nodesType !== false){
-            $nodesType .= "s";
+            $nodesType = self::typePlural($nodesType);
             $arr[$nodesType] = [];
             foreach ($this->nodes as $node) {
                 if($node->print() != null){
