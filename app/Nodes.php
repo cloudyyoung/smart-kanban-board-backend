@@ -394,6 +394,7 @@ abstract class Nodes{
                 $func = "Creates";
                 $args = ["title", self::getParentTypeStatic($type) . "_id"];
             break;
+            case "PUT":
             case "PATCH":
                 $func = "Updates";
                 $args = ["node_id"];
