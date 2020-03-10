@@ -138,7 +138,7 @@ class Users
         if($ret === false){
             Flight::ret(StatusCodes::SERVICE_ERROR, "Service Error");
         }else if($ret === true){
-            Flight::ret(StatusCodes::OK, "Successfully signed up", $user);
+            Flight::ret(StatusCodes::CREATED, "User is successfully signed up", $user);
         }else if($ret == -1){
             Flight::ret(StatusCodes::PRECONDITION_FAILED, "Username has been taken");
         }else if($ret == -2){
