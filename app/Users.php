@@ -193,7 +193,7 @@ class Users
         $password = Flight::request()->data['password'];
 
         if (!$user->authenticate($username, $password)) {
-            Flight::ret(401, "Failed Authentication");
+            Flight::ret(401, "Incorrect username or password");
         } else {
             $user->save();
             Flight::ret(200, "OK", $user);
