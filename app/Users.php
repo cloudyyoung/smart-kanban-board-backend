@@ -44,19 +44,17 @@ class Users
 
     private function authenticate($username, $password)
     {
-
-        if ($username == null || $password == null) {
-            return false;
-        }
-
         $this->username = $username;
         $this->password = $password;
 
-        $ret = Flight::sql("SELECT * FROM `user` WHERE `username`='$username' AND `password`='$password'  ");
+        $ret = Flight::sql("SELECT * FROM `user` WHERE `username`='{$this->username}'  ");
 
         if (empty($ret)) {
-            return false;
+            return -1;
+        }else if($ret->password != $password){
+            return -2;
         }
+
 
         $this->existing = true;
         foreach ($ret as $key => $value) {
@@ -138,15 +136,15 @@ class Users
         if($ret === false){
             Flight::ret(StatusCodes::SERVICE_ERROR, "Service Error");
         }else if($ret === true){
-            Flight::ret(StatusCodes::CREATED, "User is successfully signed up", $user);
+            Flight::ret(StatusCodes::CREATED, "Your account is successfully signed up.", $user);
         }else if($ret == -1){
-            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Username has been taken");
+            Flight::ret(StatusCodes::PRECONDITION_FAILED, "This username has been taken.");
         }else if($ret == -2){
-            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Please choose a password that has 8-20 characters, combination of digits and letters");
+            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Please choose a password that has 8-20 characters, combination of digits and letters.");
         }else if($ret == -3){
-            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Security question and answer has to be correctly filled in");
+            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Security question and answer has to be correctly filled in.");
         }else if($ret == -4){
-            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Username is invalid");
+            Flight::ret(StatusCodes::PRECONDITION_FAILED, "This username is invalid, try another one.");
         }
     }
 
@@ -186,17 +184,19 @@ class Users
 
     public static function Authentication()
     {
-
         $user = new Users();
 
         $username = Flight::request()->data['username'];
         $password = Flight::request()->data['password'];
 
-        if (!$user->authenticate($username, $password)) {
-            Flight::ret(401, "Incorrect username or password");
+        $ret = $user->authenticate($username, $password);
+        if ($ret === -1) {
+            Flight::ret(StatusCodes::FORBIDDEN, "This account doesn't exist. Enter a different account.");
+        } else if ($ret === -2) {
+            Flight::ret(StatusCodes::UNAUTHORIZED, "Your password is incorrect.");
         } else {
             $user->save();
-            Flight::ret(200, "OK", $user);
+            Flight::ret(StatusCodes::OK, "OK", $user);
         }
     }
 
@@ -216,11 +216,11 @@ class Users
         }
 
         if ($user->existing) { // existing user query
-            Flight::ret(200, "OK", $user);
+            Flight::ret(StatusCodes::OK, "OK", $user);
         } else if ($tryCurrent) {
-            Flight::ret(401, "Unauthorized");
+            Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
         } else {
-            Flight::ret(404, "No matching user");
+            Flight::ret(StatusCodes::NOT_FOUND, "No matching user");
         }
     }
 }

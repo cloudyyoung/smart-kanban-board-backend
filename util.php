@@ -78,7 +78,7 @@ Flight::map('ret', function ($code = StatusCodes::NO_CONTENT, $message = '', $ar
     http_response_code($code);
 
     if($code >= StatusCodes::errorCodesBeginAt){
-        $message = ucwords($message);
+        // $message = ucwords($message);
         Flight::json(Array(
             "error" => Array(
                 "code" => $code,
