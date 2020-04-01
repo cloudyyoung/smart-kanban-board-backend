@@ -268,13 +268,19 @@ abstract class Nodes{
             if(!$property->isStatic()){
                 $key = $property->name;
                 $key_alias = $key;
+                $value = $this->$key;
+
                 if($this->type == "user" && $key != "id"){
                     continue;
                 }
                 if($key == "parent_id"){
                     $key_alias = $this->getParentType() . "_id";
                 }
-                $arr[$key_alias] = $this->$key;
+                if($key == "due_date"){
+                    $value = strtotime($value);
+                }
+
+                $arr[$key_alias] = $value;
             }
         }
         if($this->type == "user"){
