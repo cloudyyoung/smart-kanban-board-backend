@@ -76,26 +76,22 @@ class Users
     }
 
     private function register($username, $password, $sec_ques, $sec_ans){
+        $ret = Flight::sql("SELECT * FROM `user` WHERE `username` = '$username' ");
         if(empty($username)){
             return -4;
-        }else if(empty($password)){
-            return -5;
-        }else if(empty($sec_ques)){
-            return -6;
-        }else if(empty($sec_ans)){
-            return -7;
-        }
-
-        $ret = Flight::sql("SELECT * FROM `user` WHERE `username` = '$username' ");
-        if(!empty($ret)){
+        }else if(!empty($ret)){
             return -1;
         }
         $reg = "/^(?!\D+$)(?![^a-zA-Z]+$)\S{8,20}$/";
-        if(!preg_match($reg, $password)){
+        if(empty($password)){
+            return -5;
+        }else if(!preg_match($reg, $password)){
             return -2;
         }
-        if(empty($sec_ques) || empty($sec_ans)){
-            return -3;
+        if(empty($sec_ques)){
+            return -6;
+        }else if(empty($sec_ans)){
+            return -7;
         }
         $sec_ques = addslashes($sec_ques);
         $sec_ans = addslashes($sec_ans);
@@ -150,17 +146,15 @@ class Users
         }else if($ret == -1){
             Flight::ret(StatusCodes::PRECONDITION_FAILED, "This username has been taken");
         }else if($ret == -2){
-            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Please choose a password that has 8-20 characters, combination of digits and letters");
-        }else if($ret == -3){
-            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Security question and answer has to be correctly filled in");
+            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Please choose a password which has 8-20 characters, combination of digits and letters");
         }else if($ret == -4){
             Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please choose a username", Array("username", "password", "security_question", "security_answer"));
         }else if($ret == -5){
-            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please choose a password", Array("password", "security_question", "security_answer"));
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please choose a password which has 8-20 characters, combination of digits and letters", Array("password", "security_question", "security_answer"));
         }else if($ret == -6){
             Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please choose a security question", Array("security_question", "security_answer"));
         }else if($ret == -7){
-            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please choose a security answer", Array("security_answer"));
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please provide an answer for your security question", Array("security_answer"));
         }
     }
 
