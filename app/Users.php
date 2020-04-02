@@ -47,14 +47,17 @@ class Users
         $this->username = $username;
         $this->password = $password;
 
-        $ret = Flight::sql("SELECT * FROM `user` WHERE `username`='{$this->username}'  ");
+        $ret = Flight::sql("SELECT * FROM `user` WHERE `username`='{$username}'  ");
 
-        if (empty($ret)) {
+        if(empty($username)){
+            return -3;
+        }else if (empty($ret)) {
             return -1;
+        }else if(empty($password)){
+            return -4;
         }else if($ret->password != $password){
             return -2;
         }
-
 
         $this->existing = true;
         foreach ($ret as $key => $value) {
@@ -75,7 +78,14 @@ class Users
     private function register($username, $password, $sec_ques, $sec_ans){
         if(empty($username)){
             return -4;
+        }else if(empty($password)){
+            return -5;
+        }else if(empty($sec_ques)){
+            return -6;
+        }else if(empty($sec_ans)){
+            return -7;
         }
+
         $ret = Flight::sql("SELECT * FROM `user` WHERE `username` = '$username' ");
         if(!empty($ret)){
             return -1;
@@ -136,15 +146,21 @@ class Users
         if($ret === false){
             Flight::ret(StatusCodes::SERVICE_ERROR, "Service Error");
         }else if($ret === true){
-            Flight::ret(StatusCodes::CREATED, "Your account is successfully signed up.", $user);
+            Flight::ret(StatusCodes::CREATED, "Your account is successfully signed up", $user);
         }else if($ret == -1){
-            Flight::ret(StatusCodes::PRECONDITION_FAILED, "This username has been taken.");
+            Flight::ret(StatusCodes::PRECONDITION_FAILED, "This username has been taken");
         }else if($ret == -2){
-            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Please choose a password that has 8-20 characters, combination of digits and letters.");
+            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Please choose a password that has 8-20 characters, combination of digits and letters");
         }else if($ret == -3){
-            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Security question and answer has to be correctly filled in.");
+            Flight::ret(StatusCodes::PRECONDITION_FAILED, "Security question and answer has to be correctly filled in");
         }else if($ret == -4){
-            Flight::ret(StatusCodes::PRECONDITION_FAILED, "This username is invalid, try another one.");
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please choose a username", Array("username", "password", "security_question", "security_answer"));
+        }else if($ret == -5){
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please choose a password", Array("password", "security_question", "security_answer"));
+        }else if($ret == -6){
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please choose a security question", Array("security_question", "security_answer"));
+        }else if($ret == -7){
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please choose a security answer", Array("security_answer"));
         }
     }
 
@@ -191,9 +207,13 @@ class Users
 
         $ret = $user->authenticate($username, $password);
         if ($ret === -1) {
-            Flight::ret(StatusCodes::FORBIDDEN, "This account doesn't exist. Enter a different account.");
+            Flight::ret(StatusCodes::PRECONDITION_FAILED, "This account doesn't exist. Enter a different account");
         } else if ($ret === -2) {
-            Flight::ret(StatusCodes::UNAUTHORIZED, "Your password is incorrect.");
+            Flight::ret(StatusCodes::UNAUTHORIZED, "Your password to this account is incorrect");
+        } else if($ret === -3){
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please enter your account username", Array("username", "password"));
+        } else if($ret === -4){
+            Flight::ret(StatusCodes::NOT_ACCEPTABLE, "Please enter your account password", Array("password"));
         } else {
             $user->save();
             Flight::ret(StatusCodes::OK, "OK", $user);
