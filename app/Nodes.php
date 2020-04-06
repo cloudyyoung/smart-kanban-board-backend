@@ -42,7 +42,10 @@ abstract class Nodes{
         foreach($data as $key => $value){
             if($key == $this->getParentType() . '_id'){
                 $key = "parent_id";
+            }else if($key == "due_date" && $value != null){
+                $value = strtotime($value);
             }
+
             if(is_numeric($value)){
                 $this->$key = (int) $value;
             }else if(is_bool($value)){
@@ -135,6 +138,7 @@ abstract class Nodes{
             $key = $property->name;
             $key_alias = $key;
             $value = $this->$key;
+
             if($key == "parent_id"){
                 $key_alias = $this->getParentType() . "_id";
             }else if($key == "id"){
@@ -283,9 +287,6 @@ abstract class Nodes{
                 }
                 if($key == "parent_id"){
                     $key_alias = $this->getParentType() . "_id";
-                }
-                if($key == "due_date" && $value != null){
-                    $value = strtotime($value);
                 }
 
                 $arr[$key_alias] = $value;
