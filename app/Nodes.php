@@ -134,12 +134,20 @@ abstract class Nodes{
         foreach($properties as $property){
             $key = $property->name;
             $key_alias = $key;
+            $value = $this->$key;
             if($key == "parent_id"){
                 $key_alias = $this->getParentType() . "_id";
             }else if($key == "id"){
                 continue;
+            }else if($key == "due_date" && $value != null){
+                $value = gmdate("Y-m-d", $value);
             }
-            $values[] = "`$key_alias` = '{$this->$key}'";
+            
+            if($value == null){
+                $values[] = "`$key_alias` = null";
+            }else{
+                $values[] = "`$key_alias` = '{$value}'";
+            }
         }
         $sql = "UPDATE `{$this->type}` SET " . implode(", ", $values) . " WHERE `id`='{$this->id}' ";
         $ret = Flight::sql($sql);
@@ -276,7 +284,7 @@ abstract class Nodes{
                 if($key == "parent_id"){
                     $key_alias = $this->getParentType() . "_id";
                 }
-                if($key == "due_date"){
+                if($key == "due_date" && $value != null){
                     $value = strtotime($value);
                 }
 
