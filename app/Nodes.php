@@ -140,7 +140,7 @@ abstract class Nodes{
             }else if($key == "id"){
                 continue;
             }else if($key == "due_date" && $value != null){
-                $value = gmdate("Y-m-d", $value);
+                $value = date("Y-m-d H:i:s", $value);
             }
             
             if($value == null){
