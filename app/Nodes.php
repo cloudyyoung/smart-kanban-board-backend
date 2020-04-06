@@ -42,7 +42,7 @@ abstract class Nodes{
         foreach($data as $key => $value){
             if($key == $this->getParentType() . '_id'){
                 $key = "parent_id";
-            }else if($key == "due_date" && $value != null){
+            }else if($key == "due_date" && $value != null && strtotime($value) !== false){
                 $value = strtotime($value);
             }
 
