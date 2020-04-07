@@ -1,5 +1,7 @@
 # Kanban-Server
 
+[![time tracker](https://wakatime.com/badge/github/CloudyYoung/Kanban-Server.svg)](https://wakatime.com/badge/github/CloudyYoung/Kanban-Server)
+
 ## This repository
 - This repository is the server-end code for [CloudyYoung/Smart-Kanban-Board](https://github.com/CloudyYoung/Smart-Kanban-Board), and as an important part of it.   
 - It is written in **PHP** and in **object-oriented programming**.
