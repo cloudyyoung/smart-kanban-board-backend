@@ -119,14 +119,14 @@ abstract class Nodes{
                 $key = $this->getParentType() . "_id";
             }else if($key == "id"){
                 continue;
-            }else if($key == "due_date" && $value != null){
+            }else if($key == "due_date" && !empty($value)){
                 $value = date("Y-m-d H:i:s", $value);
             }
             
-            $keys[] = $key;
-            if($value == null){
-                $values[] = "null";
+            if(empty($value)){
+
             }else{
+                $keys[] = $key;
                 $values[] = "'{$value}'";
             }
         }
@@ -154,11 +154,11 @@ abstract class Nodes{
                 $key_alias = $this->getParentType() . "_id";
             }else if($key == "id"){
                 continue;
-            }else if($key == "due_date" && $value != null){
+            }else if($key == "due_date" && !empty($value)){
                 $value = date("Y-m-d H:i:s", $value);
             }
             
-            if($value == null){
+            if(empty($value)){
                 $values[] = "`$key_alias` = null";
             }else{
                 $values[] = "`$key_alias` = '{$value}'";
