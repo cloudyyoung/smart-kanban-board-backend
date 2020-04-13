@@ -109,18 +109,29 @@ abstract class Nodes{
 
         $reflection = new ReflectionClass($this);
         $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
-        $fields = [];
+        $keys = [];
         $values = [];
         foreach($properties as $property){
             $key = $property->name;
-            $values[] = "'{$this->$key}'";
+            $value = $this->$key;
+
             if($key == "parent_id"){
                 $key = $this->getParentType() . "_id";
+            }else if($key == "id"){
+                continue;
+            }else if($key == "due_date" && $value != null){
+                $value = date("Y-m-d H:i:s", $value);
             }
-            $fields[] = "`$key`";
+            
+            $keys[] = $key;
+            if($value == null){
+                $values[] = "null";
+            }else{
+                $values[] = "'{$value}'";
+            }
         }
 
-        $sql = "INSERT INTO `{$this->type}` (" . implode(", ", $fields) . ") VALUES ( " . implode(", ", $values) . ")  ";
+        $sql = "INSERT INTO `{$this->type}` (" . implode(", ", $keys) . ") VALUES ( " . implode(", ", $values) . ")  ";
         $ret = Flight::sql($sql);
         if ($ret === false && Flight::db()->error != "") {
             return -2;
@@ -334,7 +345,7 @@ abstract class Nodes{
         if($ret === -1){
             Flight::ret(StatusCodes::NOT_FOUND, $parent_typeUpper . " Not Found", null);
         }else if($ret === -2){
-            Flight::ret(StatusCodes::SERVICE_ERROR, "Service Error", null);
+            Flight::ret(StatusCodes::SERVICE_ERROR, "Service Error", Flight::db()->error);
         }else{
             Flight::ret(StatusCodes::CREATED, "Created", $node->print());
         }
