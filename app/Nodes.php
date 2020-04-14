@@ -97,20 +97,14 @@ abstract class Nodes
 
     public function create()
     {
-        if ($this->id == 0) return -999;
-
-        $this->checkAuthority();
-        if (!$this->authorized) {
-            return -999;
-        }
-
+        
         $parent_type = self::getParentTypeStatic($this->type);
 
         if ($parent_type != "user") {
             $parent_type_class = self::typeClass($parent_type);
             $parent_node = new $parent_type_class($this->parent_id);
             $parent_node->get();
-            if ($parent_node->authorized == false) {
+            if (!$parent_node->authorized) {
                 return -1;
             }
         } else {
@@ -235,6 +229,7 @@ abstract class Nodes
         $sql .= "WHERE `$this->type`.`id` = {$this->id} ";
         // SELECT * FROM `event` INNER JOIN `column` ON `column`.`id`=`event`.`column_id` INNER JOIN `board` ON `board`.`id` = `column`.`board_id` INNER JOIN `user` ON `user`.`id` = `board`.`user_id` WHERE `event`.`id`=1 AND `user`.`id`=1
         $ret = Flight::sql($sql);
+        var_dump($sql);
         if ($ret !== false && !empty($ret) && $ret->id == Users::$current->id) {
             $this->authorized = true;
             $this->existing = true;
@@ -245,6 +240,8 @@ abstract class Nodes
             $this->authorized = false;
             $this->existing = false;
         }
+        var_dump($this->authorized);
+        var_dump($this->existing);
     }
 
     private function getParentType($type = null, $level = 1)
@@ -387,6 +384,7 @@ abstract class Nodes
         $node = self::MakeInstance($data->node_id, $data->type);
         $node->build($data);
         $ret = $node->create();
+        var_dump($ret);
         if ($ret === -1) {
             Flight::ret(StatusCodes::NOT_FOUND, $parent_typeUpper . " Not Found", null);
         } else if ($ret === -2) {
