@@ -363,7 +363,6 @@ class Users
 
 
         $data = Flight::request()->data;
-        $data->user_id = $user_id;
 
         // Escape
         $data = self::escape($data);
