@@ -61,7 +61,7 @@ abstract class Nodes
 
     public function get()
     {
-        if ($this->id < 100) return -999;
+        if ($this->id < 100 && $this->type != "user") return -999;
 
         $this->checkAuthority();
         if (!$this->authorized) {
