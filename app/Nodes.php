@@ -105,7 +105,7 @@ abstract class Nodes
             $parent_node = new $parent_type_class($this->parent_id);
             $parent_node->get();
             if (!$parent_node->authorized) {
-                return -1;
+                return -999;
             }
         } else {
             if (Users::$current == null) {
