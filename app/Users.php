@@ -46,22 +46,17 @@ class Users
     }
 
     public function build($data)
-    {
+    {   
         foreach ($data as $key => $value) {
-            var_dump('value');
-            var_dump($value);
             if ($key == "availability") {
-                foreach((array) $value as $index => $each){
-                    var_dump($each);
-                    $this->$key[(int) $index] = (int) $each;
-
+                $arr = [0, 0, 0, 0, 0, 0, 0];
+                if(gettype($value) == "string"){
+                    $value = json_decode($value, true);
                 }
-                // $value = json_decode($value);
-                // foreach ($value as $index => $each) {
-                //     // $this->$key[$index] = $each;
-                //     var_dump($index);
-                //     var_dump($each);
-                // }
+                foreach((array) $value as $index => $each){
+                    $arr[$index] = (int) $each;
+                }
+                $this->availability = $arr;
             }else if (is_numeric($value)) {
                 $this->$key = (int) $value;
             } else if (is_bool($value)) {
@@ -69,8 +64,8 @@ class Users
             } else {
                 $this->$key = $value;
             }
-            var_dump($this->$key);
         }
+        return $this;
     }
 
     public function save()
@@ -181,7 +176,6 @@ class Users
     {
         $ret = Flight::sql("SELECT * FROM `user` WHERE `id` ='{$this->id}'   ");
         $this->build($ret);
-
         return true;
     }
 
@@ -327,7 +321,6 @@ class Users
 
     public static function Updates($data)
     {
-        var_dump($data);
         $user = Users::$current;
         $user->build($data);
         $ret = $user->update();
