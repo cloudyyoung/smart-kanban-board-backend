@@ -180,6 +180,8 @@ class Users
                 if(empty($value)){
                     $value = "[12, 12, 12, 12, 12, 12, 12]";
                 }
+            }else if($key == "id"){
+                continue;
             }
             
             if(empty($value)){
@@ -298,7 +300,7 @@ class Users
         }
     }
 
-    public static function Updates(){
+    public static function Updates($data){
         $ret = self::$current->update();
         if($ret === -2){
             Flight::ret(StatusCodes::SERVICE_ERROR, "Fail to update by database error", Flight::db()->error);

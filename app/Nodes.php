@@ -42,7 +42,7 @@ abstract class Nodes{
         foreach($data as $key => $value){
             if($key == $this->getParentType() . '_id'){
                 $key = "parent_id";
-            }else if($key == "due_date" && $value != null && strtotime($value) !== false){
+            }else if(($key == "due_date" || $key == "lastGneratedDate") && $value != null && strtotime($value) !== false){
                 $value = strtotime($value);
             }
 
@@ -126,7 +126,7 @@ abstract class Nodes{
                 $key = $this->getParentType() . "_id";
             }else if($key == "id"){
                 continue;
-            }else if($key == "due_date" && !empty($value)){
+            }else if(($key == "due_date" || $key == "lastGneratedDate") && !empty($value)){
                 $value = date("Y-m-d H:i:s", $value);
             }
             
@@ -168,7 +168,7 @@ abstract class Nodes{
                 $key_alias = $this->getParentType() . "_id";
             }else if($key == "id"){
                 continue;
-            }else if($key == "due_date" && !empty($value)){
+            }else if(($key == "due_date" || $key == "lastGneratedDate") && !empty($value)){
                 $value = date("Y-m-d H:i:s", $value);
             }
             
