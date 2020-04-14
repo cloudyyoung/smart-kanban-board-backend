@@ -36,10 +36,7 @@ class Users
         }
 
         if (!empty($ret)) {
-            $this->existing = true;
-            $this->username = $ret->username;
-            $this->id = (int) $ret->id;
-            $this->availability = json_decode($ret->availability);
+            $this->build($ret);
         }
 
         if (self::$current != null && (self::$current->id == $this->id || self::$current->username == $this->username)) {
@@ -51,15 +48,28 @@ class Users
     public function build($data)
     {
         foreach ($data as $key => $value) {
+            var_dump('value');
+            var_dump($value);
             if ($key == "availability") {
-                $this->$key = json_decode($value);
-            } else if (is_numeric($value)) {
+                foreach((array) $value as $index => $each){
+                    var_dump($each);
+                    $this->$key[(int) $index] = (int) $each;
+
+                }
+                // $value = json_decode($value);
+                // foreach ($value as $index => $each) {
+                //     // $this->$key[$index] = $each;
+                //     var_dump($index);
+                //     var_dump($each);
+                // }
+            }else if (is_numeric($value)) {
                 $this->$key = (int) $value;
             } else if (is_bool($value)) {
                 $this->$key = (bool) $value;
             } else {
                 $this->$key = $value;
             }
+            var_dump($this->$key);
         }
     }
 
@@ -180,17 +190,20 @@ class Users
         $values = [];
 
         $reflection = new ReflectionClass($this);
-        $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
+        $public = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
+        $static = $reflection->getProperties(ReflectionProperty::IS_STATIC);
+        $properties = array_diff($public, $static);
+
         foreach ($properties as $property) {
             $key = $property->name;
             $value = $this->$key;
 
             if ($key == "availability") {
-                $value = json_encode(json_decode($value));
+                $value = json_encode($value);
                 if (empty($value)) {
                     $value = "[12, 12, 12, 12, 12, 12, 12]";
                 }
-            } else if ($key == "id" || $key == "username") {
+            } else if ($key == "id" || $key == "username" || $key == "sessid" || $key == "authenticated" || $key == "existing") {
                 continue;
             }
 
@@ -314,9 +327,9 @@ class Users
 
     public static function Updates($data)
     {
+        var_dump($data);
         $user = Users::$current;
         $user->build($data);
-        // $ret = $user->get();
         $ret = $user->update();
 
         if ($ret === -2) {
@@ -360,10 +373,26 @@ class Users
         $data->user_id = $user_id;
 
         // Escape
-        foreach ($data as $key => $each) {
-            $data->$key = addslashes($each);
-        }
+        $data = self::escape($data);
 
         self::$func($data);
+    }
+
+    private static function escape($data)
+    {
+        if (is_array($data)) {
+            foreach ($data as $index => $each) {
+                $data[$index] = addslashes($each);
+            }
+        } else {
+            foreach ($data as $key => $each) {
+                if (is_array($each)) {
+                    $data->$key = self::escape($each);
+                } else {
+                    $data->$key = addslashes($each);
+                }
+            }
+        }
+        return $data;
     }
 }
