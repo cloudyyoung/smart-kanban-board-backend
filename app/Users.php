@@ -180,7 +180,7 @@ class Users
                 if(empty($value)){
                     $value = "[12, 12, 12, 12, 12, 12, 12]";
                 }
-            }else if($key == "id"){
+            }else if($key == "id" || $key == "username"){
                 continue;
             }
             
