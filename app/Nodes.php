@@ -57,11 +57,11 @@ abstract class Nodes{
     }
 
     public function get(){
-        if($this->id == 0) return -1;
+        if($this->id < 100) return -999;
 
         $this->checkAuthority();
         if(!$this->authorized){
-            return -1;
+            return -999;
         }
 
         $ret = Flight::sql("SELECT * FROM `{$this->type}` WHERE `id` ='{$this->id}'   ");
@@ -92,6 +92,13 @@ abstract class Nodes{
     }
 
     public function create(){
+        if($this->id == 0) return -999;
+
+        $this->checkAuthority();
+        if(!$this->authorized){
+            return -999;
+        }
+
         $parent_type = self::getParentTypeStatic($this->type);
 
         if($parent_type != "user"){
@@ -142,6 +149,13 @@ abstract class Nodes{
     }
 
     public function update(){
+        if($this->id < 100) return -999;
+
+        $this->checkAuthority();
+        if(!$this->authorized){
+            return -999;
+        }
+
         $reflection = new ReflectionClass($this);
         $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
         $values = [];
@@ -174,6 +188,13 @@ abstract class Nodes{
     }
 
     public function delete(){
+        if($this->id < 100) return -999;
+
+        $this->checkAuthority();
+        if(!$this->authorized){
+            return -999;
+        }
+
         // DELETE `board`,`column`,`event` from `board` LEFT JOIN `column` ON `column`.`board_id`=`board`.`id` LEFT JOIN `event` ON `event`.`column_id`=`column`.`id` WHERE `board`.`id`=38
         $child = $this->type;
         $grandchild = $this->type;
@@ -330,6 +351,9 @@ abstract class Nodes{
         if($ret === -1){
             Flight::ret(StatusCodes::NOT_FOUND, "$typeUpper Not Found", null);
             return;
+        }else if($ret === -999){
+            Flight::ret(StatusCodes::NOT_FOUND, "$typeUpper Not Found", null);
+            return;
         }
         Flight::ret(StatusCodes::OK, "OK", $node->print());
     }
@@ -346,6 +370,9 @@ abstract class Nodes{
             Flight::ret(StatusCodes::NOT_FOUND, $parent_typeUpper . " Not Found", null);
         }else if($ret === -2){
             Flight::ret(StatusCodes::SERVICE_ERROR, "Service Error", Flight::db()->error);
+        }else if($ret === -999){
+            Flight::ret(StatusCodes::NOT_FOUND, "$parent_typeUpper Not Found", null);
+            return;
         }else{
             Flight::ret(StatusCodes::CREATED, "Created", $node->print());
         }
@@ -365,6 +392,9 @@ abstract class Nodes{
         if($ret === -2){
             Flight::ret(StatusCodes::SERVICE_ERROR, "Fail to update by database error", Flight::db()->error);
             return;
+        }else if($ret === -999){
+            Flight::ret(StatusCodes::NOT_FOUND, "$typeUpper Not Found", null);
+            return;
         }
         Flight::ret(StatusCodes::ACCEPTED, "Accepted", $node->print());
     }
@@ -374,6 +404,9 @@ abstract class Nodes{
         $ret = $node->get();
         $typeUpper = self::typeProper($node->type);
         if($ret === -1){
+            Flight::ret(StatusCodes::NOT_FOUND, "$typeUpper Not Found", null);
+            return;
+        }else if($ret === -999){
             Flight::ret(StatusCodes::NOT_FOUND, "$typeUpper Not Found", null);
             return;
         }
@@ -395,7 +428,7 @@ abstract class Nodes{
 
     public static function Nodes($node_id, $type)
     {
-
+        
         if(Users::$current == null){
             Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
             return;

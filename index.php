@@ -19,13 +19,9 @@ Flight::route('PUT /api/users/authentication', function () {
     Users::Authentication();
 });
 
-Flight::route('GET /api/users(/@id)', function ($id) {
+Flight::route('/api/users(/@id)', function ($id) {
     if($id == "me") $id = null;
     Users::Users($id);
-});
-
-Flight::route('POST /api/users', function () {
-    Users::Registration();
 });
 
 Flight::route('POST /api/users/reset/password', function () {

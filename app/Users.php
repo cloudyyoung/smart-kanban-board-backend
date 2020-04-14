@@ -3,6 +3,9 @@
 namespace App;
 
 use Flight;
+use Throwable;
+use ReflectionClass;
+use ReflectionProperty;
 
 class Users
 {
@@ -14,6 +17,8 @@ class Users
     public $sessid = ""; // PHPSESSID
     public $authenticated = false;
     public $existing = false;
+    public $availability = [0, 0, 0, 0, 0, 0, 0, 0];
+    public $theme = null;
     private $password = "";
     private $security_question = "";
     private $security_answer = "";
@@ -34,12 +39,33 @@ class Users
             $this->existing = true;
             $this->username = $ret->username;
             $this->id = (int) $ret->id;
+            $this->availability = json_decode($ret->availability);
         }
 
         if (self::$current != null && (self::$current->id == $this->id || self::$current->username == $this->username)) {
             $this->authenticated = true;
             $this->sessid = session_id();
         }
+    }
+
+    public function build($data){
+        foreach($data as $key => $value){
+            if($key == "availability"){
+                $this->$key = json_decode($value);
+            }else if(is_numeric($value)){
+                $this->$key = (int) $value;
+            }else if(is_bool($value)){
+                $this->$key = (bool) $value;
+            }else{
+                $this->$key = $value;
+            }
+        }
+    }
+
+    public function save()
+    {
+        self::$current = $this;
+        $_SESSION['user'] = serialize($this); // store user in current session
     }
 
     private function authenticate($username, $password)
@@ -65,6 +91,8 @@ class Users
                 $this->$key = (int) $value;
             }else if(is_bool($value)){
                 $this->$key = (boolean) $value;
+            }else if($key == "availability"){
+                $this->$key = json_decode($value);
             }else{
                 $this->$key = $value;
             }
@@ -95,7 +123,7 @@ class Users
         }
         $sec_ques = addslashes($sec_ques);
         $sec_ans = addslashes($sec_ans);
-        $ret = Flight::sql("INSERT INTO `user`(`username`, `password`, `security_question`, `security_answer`) VALUES ('$username', '$password', '$sec_ques', '$sec_ans')   ");
+        $ret = Flight::sql("INSERT INTO `user`(`username`, `password`, `security_question`, `security_answer`, `availability`, `theme`) VALUES ('$username', '$password', '$sec_ques', '$sec_ans', '[12, 12, 12, 12, 12, 12, 12]', null)   ");
         if($ret !== false){
             $this->authenticate($username, $password);
             return true;
@@ -126,6 +154,46 @@ class Users
         if($ret === false){
             return -2;
         }else{
+            return true;
+        }
+    }
+
+    private function get(){
+        $ret = Flight::sql("SELECT * FROM `user` WHERE `id` ='{$this->id}'   ");
+        $this->build($ret);
+
+        return true;
+    }
+
+    private function update(){
+        $values = [];
+        
+        $reflection = new ReflectionClass($this);
+        $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
+        foreach($properties as $property){
+            $key = $property->name;
+            $key_alias = $key;
+            $value = $this->$key;
+
+            if($key == "availability"){
+                $value = json_encode(json_decode($value));
+                if(empty($value)){
+                    $value = "[12, 12, 12, 12, 12, 12, 12]";
+                }
+            }
+            
+            if(empty($value)){
+                $values[] = "`$key_alias` = null";
+            }else{
+                $values[] = "`$key_alias` = '{$value}'";
+            }
+        }
+        $sql = "UPDATE `user` SET " . implode(", ", $values) . " WHERE `id`='{$this->id}' ";
+        $ret = Flight::sql($sql);
+        if ($ret === false && Flight::db()->error != "") {
+            return -2;
+        }else{
+            $this->get();
             return true;
         }
     }
@@ -186,12 +254,6 @@ class Users
         }
     }
 
-    public function save()
-    {
-        self::$current = $this;
-        $_SESSION['user'] = serialize($this); // store user in current session
-    }
-
     public static function Authentication()
     {
         $user = new Users();
@@ -214,14 +276,12 @@ class Users
         }
     }
 
-    public static function Users($id = null)
-    {
-
+    public static function Gets($data){
         $user = null;
         $tryCurrent = false;
 
-        if ($id != null) { // specific user
-            $user = new Users($id);
+        if ($data->user_id != null) { // specific user
+            $user = new Users($data->user_id);
         } else if (self::$current != null) { // currently has authenticated in user
             $user = self::$current;
         } else {
@@ -236,5 +296,55 @@ class Users
         } else {
             Flight::ret(StatusCodes::NOT_FOUND, "No matching user");
         }
+    }
+
+    public static function Updates(){
+        $ret = self::$current->update();
+        if($ret === -2){
+            Flight::ret(StatusCodes::SERVICE_ERROR, "Fail to update by database error", Flight::db()->error);
+            return;
+        }
+        Flight::ret(StatusCodes::ACCEPTED, "Accepted", self::$current->print());
+    }
+
+    public static function Users($user_id = null)
+    {
+        if(Users::$current == null){
+            Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
+            return;
+        }
+
+        $func = null;
+        $method = Flight::request()->method;
+
+        
+        switch ($method) {
+            case "GET":
+                $func = "Gets";
+            break;
+            case "POST":
+                $func = "Registration";
+            break;
+            case "PUT":
+            case "PATCH":
+                $func = "Updates";
+            break;
+        }
+
+        if($func == null){
+            Flight::ret(StatusCodes::METHOD_NOT_ALLOWED, "Method Not Allowed");
+            return;
+        }
+
+
+        $data = Flight::request()->data;
+        $data->user_id = $user_id;
+        
+        // Escape
+        foreach($data as $key => $each){
+            $data->$key = addslashes($each);
+        }
+
+        self::$func($data);
     }
 }
