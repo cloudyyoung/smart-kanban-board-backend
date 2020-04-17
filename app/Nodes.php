@@ -137,11 +137,19 @@ abstract class Nodes
         }
 
         $sql = "INSERT INTO `{$this->type}` (" . implode(", ", $keys) . ") VALUES ( " . implode(", ", $values) . ")  ";
+        
         $ret = Flight::sql($sql);
         if ($ret === false && Flight::db()->error != "") {
             return -2;
         } else {
             $this->id = Flight::db()->insert_id;
+
+            
+            if($this->type == "board"){
+                $sql = "INSERT INTO `column`(`board_id`, `title`, `preset`) VALUES ({$this->id},'To Do',0), ({$this->id},'In Progress',1), ({$this->id},'Done',2);";
+                $ret = Flight::sql($sql);
+            }
+
             $this->get();
         }
     }
