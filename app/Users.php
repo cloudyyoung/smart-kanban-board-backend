@@ -335,10 +335,6 @@ class Users
 
     public static function Users($user_id = null)
     {
-        if (Users::$current == null) {
-            Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
-            return;
-        }
 
         $func = null;
         $method = Flight::request()->method;
@@ -354,6 +350,12 @@ class Users
             case "PATCH":
                 $func = "Updates";
                 break;
+        }
+
+        
+        if (Users::$current == null && $method != "POST") {
+            Flight::ret(StatusCodes::UNAUTHORIZED, "Unauthorized");
+            return;
         }
 
         if ($func == null) {
